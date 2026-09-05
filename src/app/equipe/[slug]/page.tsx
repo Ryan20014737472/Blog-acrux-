@@ -7,7 +7,7 @@ interface TeamMemberDetailPageProps {
 }
 
 export function generateStaticParams() {
-  return [];
+  return [{ slug: "em-preparacao" }];
 }
 
 export const dynamicParams = false;
