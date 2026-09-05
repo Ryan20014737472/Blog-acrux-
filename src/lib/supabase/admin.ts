@@ -11,13 +11,13 @@ import type { Database } from "@/types/database";
  */
 export function createSupabaseAdminClient() {
   const config = getSupabasePublicConfig();
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const secretKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!config || !serviceRoleKey) {
+  if (!config || !secretKey) {
     return null;
   }
 
-  return createClient<Database>(config.url, serviceRoleKey, {
+  return createClient<Database>(config.url, secretKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,

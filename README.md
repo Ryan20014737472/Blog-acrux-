@@ -53,8 +53,8 @@ Variáveis necessárias:
 
 ```dotenv
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SECRET_KEY=
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
@@ -74,7 +74,7 @@ where id = '<uuid-da-conta-autorizada>';
 
 Os buckets `avatars`, `blog`, `robots`, `projects`, `gallery` e `sponsors` são criados pela migração. As políticas RLS deixam conteúdo publicado público, permitem que editores gerenciem posts e mídias, e reservam a administração de usuários e conteúdo estrutural aos administradores.
 
-`SUPABASE_SERVICE_ROLE_KEY` é exclusivamente server-side: nunca a use com prefixo `NEXT_PUBLIC_` e nunca a exponha no navegador.
+`SUPABASE_SECRET_KEY` é exclusivamente server-side: nunca a use com prefixo `NEXT_PUBLIC_` e nunca a exponha no navegador. O projeto também aceita os nomes legados `NEXT_PUBLIC_SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` quando necessário.
 
 ## Conteúdo pendente
 

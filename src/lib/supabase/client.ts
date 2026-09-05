@@ -10,6 +10,6 @@ export function createSupabaseBrowserClient() {
     return null;
   }
 
-  return createBrowserClient<Database>(config.url, config.anonKey);
+  return createBrowserClient<Database>(config.url, config.publishableKey);
 }
 
