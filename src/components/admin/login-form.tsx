@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useState } from "react";
@@ -92,7 +93,10 @@ export function LoginForm() {
       <button className="button-primary mt-6 w-full" disabled={isSubmitting} type="submit">
         {isSubmitting ? "Entrando…" : "Entrar na área administrativa"}
       </button>
-      <p className="mt-4 text-center text-xs leading-5 text-acrux-muted">Não há cadastro público de administradores. Solicite acesso à equipe responsável.</p>
+      <div className="mt-4 grid gap-2 text-center text-xs leading-5 text-acrux-muted">
+        <Link className="font-bold text-acrux-cyan-bright hover:text-white" href="/admin/recuperar-senha">Esqueci minha senha</Link>
+        <p>Não há cadastro público de administradores. Solicite acesso à equipe responsável.</p>
+      </div>
     </motion.form>
   );
 }
