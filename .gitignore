@@ -1,0 +1,22 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+/.pnpm-store
+
+# Next.js
+/.next
+/out
+
+# local environment files
+.env*.local
+.env
+
+# deployment and temporary files
+/.vercel
+/work/.pnpm-home
+/work/.pnpm-store
+
+# TypeScript
+*.tsbuildinfo
+
