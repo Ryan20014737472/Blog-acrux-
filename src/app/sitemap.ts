@@ -7,9 +7,10 @@ export const dynamic = "force-static";
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
   const routes = [...publicNavigation, { href: "/temporadas", label: "Temporadas" }];
+  const baseUrl = siteConfig.url.endsWith("/") ? siteConfig.url : `${siteConfig.url}/`;
 
   return routes.map((item) => ({
-    url: new URL(item.href, siteConfig.url).toString(),
+    url: new URL(item.href === "/" ? "" : item.href.slice(1), baseUrl).toString(),
     lastModified: now,
     changeFrequency: item.href === "/" ? "weekly" : "monthly",
     priority: item.href === "/" ? 1 : 0.7,
