@@ -6,6 +6,12 @@ interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
 }
 
+export function generateStaticParams() {
+  return [];
+}
+
+export const dynamicParams = false;
+
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params;
 
@@ -30,4 +36,3 @@ export default function BlogPostPage() {
     />
   );
 }
-

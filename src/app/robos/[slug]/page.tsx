@@ -6,6 +6,12 @@ interface RobotDetailPageProps {
   params: Promise<{ slug: string }>;
 }
 
+export function generateStaticParams() {
+  return [];
+}
+
+export const dynamicParams = false;
+
 export async function generateMetadata({ params }: RobotDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
   return { title: "Robô", description: `Detalhes do robô ${slug} da ACRUX ROBOCEP.` };
@@ -20,4 +26,3 @@ export default function RobotDetailPage() {
     />
   );
 }
-

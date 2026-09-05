@@ -6,6 +6,12 @@ interface TeamMemberDetailPageProps {
   params: Promise<{ slug: string }>;
 }
 
+export function generateStaticParams() {
+  return [];
+}
+
+export const dynamicParams = false;
+
 export async function generateMetadata({ params }: TeamMemberDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
 
@@ -24,4 +30,3 @@ export default function TeamMemberDetailPage() {
     />
   );
 }
-

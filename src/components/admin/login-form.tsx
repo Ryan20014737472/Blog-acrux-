@@ -34,8 +34,24 @@ export function LoginForm() {
       return;
     }
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const { data: profile } = user
+      ? await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle()
+      : { data: null };
+
+    if (!profile || (profile.role !== "admin" && profile.role !== "editor")) {
+      await supabase.auth.signOut();
+      setError("Esta conta não possui permissão administrativa.");
+      return;
+    }
+
     router.replace("/admin");
-    router.refresh();
   }
 
   return (
@@ -80,4 +96,3 @@ export function LoginForm() {
     </motion.form>
   );
 }
-

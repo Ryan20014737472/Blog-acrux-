@@ -1,5 +1,10 @@
-import Link from "next/link";
+"use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
+import { AdminGate, type AdminSession } from "@/components/admin/admin-gate";
 import { ArrowLink } from "@/components/ui/arrow-link";
 
 interface AdminSectionProps {
@@ -19,7 +24,32 @@ const copy: Record<string, { title: string; description: string }> = {
 };
 
 export function AdminSection({ section }: AdminSectionProps) {
+  return <AdminGate>{(session) => <AdminSectionContent section={section} session={session} />}</AdminGate>;
+}
+
+function AdminSectionContent({ section, session }: AdminSectionProps & { session: AdminSession }) {
+  const router = useRouter();
   const content = copy[section] ?? { title: "Área administrativa", description: "Seção em preparação." };
+  const canAccess = section !== "usuarios" || session.role === "admin";
+
+  useEffect(() => {
+    if (!canAccess) {
+      router.replace("/admin");
+    }
+  }, [canAccess, router]);
+
+  if (!canAccess) {
+    return (
+      <main className="section pt-34" aria-live="polite">
+        <div className="shell max-w-3xl">
+          <p className="eyebrow">Área administrativa</p>
+          <div className="glass-panel mt-6 rounded-3xl p-6 sm:p-8">
+            <p className="text-base leading-7 text-acrux-muted">Redirecionando para a área permitida…</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="section pt-34">
@@ -38,4 +68,3 @@ export function AdminSection({ section }: AdminSectionProps) {
     </main>
   );
 }
-
