@@ -28,7 +28,7 @@ export function ActivateAccountForm() {
     async function checkInvitationSession() {
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await supabase!.auth.getUser();
 
       if (isCurrent) {
         setActivationState(user ? "ready" : "invalid");
