@@ -6,6 +6,12 @@ interface CompetitionDetailPageProps {
   params: Promise<{ slug: string }>;
 }
 
+export function generateStaticParams() {
+  return [{ slug: "em-preparacao" }];
+}
+
+export const dynamicParams = false;
+
 export async function generateMetadata({ params }: CompetitionDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
   return { title: "Competição", description: `Registro da competição ${slug} da ACRUX ROBOCEP.` };
@@ -20,4 +26,3 @@ export default function CompetitionDetailPage() {
     />
   );
 }
-

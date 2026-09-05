@@ -6,6 +6,12 @@ interface ProjectDetailPageProps {
   params: Promise<{ slug: string }>;
 }
 
+export function generateStaticParams() {
+  return [{ slug: "em-preparacao" }];
+}
+
+export const dynamicParams = false;
+
 export async function generateMetadata({ params }: ProjectDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
   return { title: "Projeto", description: `Detalhes do projeto ${slug} da ACRUX ROBOCEP.` };
@@ -20,4 +26,3 @@ export default function ProjectDetailPage() {
     />
   );
 }
-

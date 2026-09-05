@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { Suspense } from "react";
 
+import { LoginErrorNotice } from "@/components/admin/login-error-notice";
 import { LoginForm } from "@/components/admin/login-form";
 
 export const metadata = {
@@ -7,13 +9,7 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-interface AdminLoginPageProps {
-  searchParams: Promise<{ error?: string }>;
-}
-
-export default async function AdminLoginPage({ searchParams }: AdminLoginPageProps) {
-  const { error } = await searchParams;
-
+export default function AdminLoginPage() {
   return (
     <main className="section pt-34">
       <div className="shell grid max-w-5xl gap-10 lg:grid-cols-[0.8fr_1fr] lg:items-center">
@@ -24,11 +20,12 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
           <Link className="mt-8 inline-flex text-sm font-bold text-acrux-cyan-bright hover:text-white" href="/">← Voltar para o site público</Link>
         </div>
         <div>
-          {error === "unauthorized" ? <p className="mb-4 rounded-xl border border-yellow-200/24 bg-yellow-300/8 px-4 py-3 text-sm text-yellow-50">Esta conta não possui permissão administrativa.</p> : null}
+          <Suspense fallback={null}>
+            <LoginErrorNotice />
+          </Suspense>
           <LoginForm />
         </div>
       </div>
     </main>
   );
 }
-
