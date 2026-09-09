@@ -45,8 +45,8 @@ create policy "posts: editors update own drafts" on public.posts
 create or replace function public.enforce_editor_post_mutation()
 returns trigger
 language plpgsql
-security definer
-set search_path = public
+security invoker
+set search_path = ''
 as $$
 begin
   if public.is_admin() then
@@ -66,6 +66,7 @@ begin
     end if;
   elsif tg_op = 'UPDATE' then
     if old.author_id is distinct from auth.uid()
+      or old.status <> 'draft'
       or new.author_id is distinct from old.author_id
       or new.status is distinct from old.status
       or new.published_at is distinct from old.published_at
