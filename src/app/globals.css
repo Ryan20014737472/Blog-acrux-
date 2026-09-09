@@ -62,7 +62,9 @@ input {
 
 a:focus-visible,
 button:focus-visible,
-input:focus-visible {
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
   outline: 2px solid var(--acrux-cyan-bright);
   outline-offset: 4px;
 }
@@ -229,6 +231,50 @@ input:focus-visible {
   transform: translateY(-2px);
 }
 
+.admin-input {
+  width: 100%;
+  min-height: 3rem;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 0.75rem;
+  background: rgb(2 8 23 / 58%);
+  padding: 0.75rem 1rem;
+  color: var(--acrux-white);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.admin-input::placeholder {
+  color: rgb(169 195 230 / 62%);
+}
+
+.admin-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.admin-file-input {
+  width: 100%;
+  min-height: 3rem;
+  border: 1px dashed rgb(75 212 232 / 28%);
+  border-radius: 0.75rem;
+  background: rgb(2 8 23 / 40%);
+  padding: 0.5rem;
+  color: var(--acrux-muted);
+  font-size: 0.9375rem;
+}
+
+.admin-file-input::file-selector-button {
+  margin-right: 0.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(75 212 232 / 14%);
+  padding: 0.5rem 0.8rem;
+  color: var(--acrux-cyan-bright);
+  font: inherit;
+  font-weight: 700;
+}
+
 .status-dot {
   width: 0.5rem;
   height: 0.5rem;
@@ -326,4 +372,3 @@ input:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
-

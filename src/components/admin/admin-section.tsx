@@ -6,6 +6,9 @@ import { useEffect } from "react";
 
 import { AdminGate, type AdminSession } from "@/components/admin/admin-gate";
 import { ArrowLink } from "@/components/ui/arrow-link";
+import { BlogManager } from "@/features/admin/blog-manager";
+import { GalleryManager } from "@/features/admin/gallery-manager";
+import { TeamManager } from "@/features/admin/team-manager";
 
 interface AdminSectionProps {
   section: string;
@@ -49,6 +52,18 @@ function AdminSectionContent({ section, session }: AdminSectionProps & { session
         </div>
       </main>
     );
+  }
+
+  if (section === "blog") {
+    return <BlogManager session={session} />;
+  }
+
+  if (section === "equipe") {
+    return <TeamManager session={session} />;
+  }
+
+  if (section === "galeria") {
+    return <GalleryManager session={session} />;
   }
 
   return (

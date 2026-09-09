@@ -59,7 +59,7 @@ function AdminDashboardContent({ session }: { session: AdminSession }) {
         <div>
           <p className="eyebrow">Dashboard</p>
           <h1 className="mt-4 text-4xl font-black tracking-[-0.06em] text-white sm:text-5xl">Olá, {session.displayName ?? "equipe"}.</h1>
-          <p className="body-copy mt-5">Painel inicial para administrar o conteúdo público. As telas de gestão detalhada serão conectadas ao Supabase na próxima etapa.</p>
+          <p className="body-copy mt-5">Painel inicial para administrar o conteúdo público. Blog, Equipe e Galeria já estão conectados ao Supabase; as demais áreas continuam em preparação.</p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {dashboardCards.map((card) => (
               <Link className="glass-panel card-hover rounded-2xl p-5" href={`/admin/${card.label.toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`} key={card.label}>
