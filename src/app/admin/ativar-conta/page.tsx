@@ -1,4 +1,5 @@
 import { ActivateAccountForm } from "@/components/admin/activate-account-form";
+import { SiteLogo } from "@/components/layout/site-logo";
 
 export const metadata = {
   title: "Ativar conta administrativa",
@@ -9,6 +10,7 @@ export default function ActivateAccountPage() {
   return (
     <main className="section pt-34">
       <div className="shell max-w-3xl">
+        <SiteLogo className="mb-8" compact priority />
         <p className="eyebrow">Convite da ACRUX</p>
         <h1 className="display-heading mt-5">Defina sua senha.</h1>
         <p className="body-copy mt-5">Use esta página somente depois de abrir o convite recebido por e-mail. Não existe cadastro público para o painel.</p>
