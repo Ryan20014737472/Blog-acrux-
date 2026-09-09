@@ -33,7 +33,7 @@ export function SiteLogo({
           height={imageSize}
           priority={priority}
           sizes={compact ? "38px" : "64px"}
-          src="/brand/acrux-logo.jpg"
+          src="/brand/acrux-logo.jpeg"
           width={imageSize}
         />
       </span>
@@ -46,4 +46,3 @@ export function SiteLogo({
     </Link>
   );
 }
-
