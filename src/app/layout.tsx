@@ -2,9 +2,10 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
 import "@/app/globals.css";
+import acruxLogo from "@/assets/acrux-logo.jpeg";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
-import { siteAsset, siteConfig } from "@/config/site";
+import { siteConfig } from "@/config/site";
 
 const siteUrl = new URL(siteConfig.url);
 
@@ -33,7 +34,7 @@ export const metadata: Metadata = {
     description: siteConfig.description,
   },
   icons: {
-    icon: siteAsset("/brand/acrux-logo.jpeg"),
+    icon: acruxLogo.src,
   },
 };
 
