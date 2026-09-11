@@ -1,8 +1,8 @@
 import Image from "next/image";
 
+import acruxLogo from "@/assets/acrux-logo.jpeg";
 import { AboutTimeline } from "@/features/home/about-timeline";
 import { ArrowLink } from "@/components/ui/arrow-link";
-import { siteAsset } from "@/config/site";
 
 export const metadata = {
   title: "Sobre",
@@ -30,7 +30,7 @@ export default function AboutPage() {
               className="aspect-square w-full object-cover"
               height={216}
               sizes="216px"
-              src={siteAsset("/brand/acrux-logo.jpeg")}
+              src={acruxLogo}
               width={216}
             />
           </div>
