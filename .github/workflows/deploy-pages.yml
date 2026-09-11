@@ -42,6 +42,11 @@ jobs:
       - name: Build static site
         run: pnpm build
 
+      - name: Include ACRUX brand assets
+        run: |
+          mkdir -p out/brand
+          cp public/brand/* out/brand/
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
