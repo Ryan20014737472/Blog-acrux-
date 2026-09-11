@@ -7,6 +7,17 @@ export const siteConfig = {
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
 } as const;
 
+/**
+ * Keeps files from `public/` inside the GitHub Pages project path.
+ * On local development the site URL has no pathname, so this returns the
+ * original root-relative path.
+ */
+export function siteAsset(path: `/${string}`) {
+  const sitePath = new URL(siteConfig.url).pathname.replace(/\/$/, "");
+
+  return `${sitePath}${path}`;
+}
+
 export const publicNavigation = [
   { href: "/", label: "Início" },
   { href: "/sobre", label: "Sobre" },
@@ -30,4 +41,3 @@ export const adminNavigation = [
   { href: "/admin/patrocinadores", label: "Patrocinadores" },
   { href: "/admin/usuarios", label: "Usuários" },
 ] as const;
-
