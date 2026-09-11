@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { siteAsset } from "@/config/site";
+import acruxLogo from "@/assets/acrux-logo.jpeg";
 import { cn } from "@/utils/cn";
 
 interface SiteLogoProps {
@@ -34,7 +34,7 @@ export function SiteLogo({
           height={imageSize}
           priority={priority}
           sizes={compact ? "38px" : "64px"}
-          src={siteAsset("/brand/acrux-logo.jpeg")}
+          src={acruxLogo}
           width={imageSize}
         />
       </span>
