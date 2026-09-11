@@ -7,6 +7,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import { ArrowLink } from "@/components/ui/arrow-link";
+import { siteAsset } from "@/config/site";
 
 const stars = [
   { left: "6%", top: "21%", size: 3 },
@@ -106,7 +107,7 @@ export function Hero() {
               height={156}
               priority
               sizes="(min-width: 640px) 156px, 124px"
-              src="/brand/acrux-logo.jpg"
+              src={siteAsset("/brand/acrux-logo.jpeg")}
               width={156}
             />
           </div>
@@ -147,4 +148,3 @@ export function Hero() {
     </section>
   );
 }
-
