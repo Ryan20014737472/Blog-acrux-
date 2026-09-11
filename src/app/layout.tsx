@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import "@/app/globals.css";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
-import { siteConfig } from "@/config/site";
+import { siteAsset, siteConfig } from "@/config/site";
 
 const siteUrl = new URL(siteConfig.url);
 
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     description: siteConfig.description,
   },
   icons: {
-    icon: "/brand/acrux-logo.jpg",
+    icon: siteAsset("/brand/acrux-logo.jpeg"),
   },
 };
 
@@ -62,4 +62,3 @@ export default function RootLayout({ children }: RootLayoutProps) {
     </html>
   );
 }
-
