@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { AdminGate, type AdminSession } from "@/components/admin/admin-gate";
 import { ArrowLink } from "@/components/ui/arrow-link";
 import { BlogManager } from "@/features/admin/blog-manager";
+import { CompetitionsManager } from "@/features/admin/competitions-manager";
 import { GalleryManager } from "@/features/admin/gallery-manager";
 import { TeamManager } from "@/features/admin/team-manager";
 
@@ -66,6 +67,10 @@ function AdminSectionContent({ section, session }: AdminSectionProps & { session
     return <GalleryManager session={session} />;
   }
 
+  if (section === "competicoes") {
+    return <CompetitionsManager session={session} />;
+  }
+
   return (
     <main className="section pt-34">
       <div className="shell max-w-4xl">
@@ -83,3 +88,4 @@ function AdminSectionContent({ section, session }: AdminSectionProps & { session
     </main>
   );
 }
+

@@ -38,6 +38,9 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Competition form validation
+        run: node --experimental-strip-types --test tests/competition-form.test.mjs
+
       - name: Production build
         run: pnpm build
 
