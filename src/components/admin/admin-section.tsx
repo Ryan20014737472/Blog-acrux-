@@ -11,6 +11,7 @@ import { CompetitionsManager } from "@/features/admin/competitions-manager";
 import { GalleryManager } from "@/features/admin/gallery-manager";
 import { TeamManager } from "@/features/admin/team-manager";
 import { RobotsManager } from "@/features/admin/robots-manager";
+import { ProjectsManager } from "@/features/admin/projects-manager";
 
 interface AdminSectionProps {
   section: string;
@@ -74,6 +75,10 @@ function AdminSectionContent({ section, session }: AdminSectionProps & { session
 
   if (section === "robos") {
     return <RobotsManager session={session} />;
+  }
+
+  if (section === "projetos") {
+    return <ProjectsManager session={session} />;
   }
 
   return (

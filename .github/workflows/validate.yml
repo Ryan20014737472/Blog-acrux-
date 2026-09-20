@@ -44,6 +44,9 @@ jobs:
       - name: Robot form validation
         run: node --experimental-strip-types --test tests/robot-form.test.mjs
 
+      - name: Project form validation
+        run: node --experimental-strip-types --test tests/project-form.test.mjs
+
       - name: Production build
         run: pnpm build
 
