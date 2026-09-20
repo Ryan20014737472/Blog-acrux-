@@ -41,6 +41,9 @@ jobs:
       - name: Competition form validation
         run: node --experimental-strip-types --test tests/competition-form.test.mjs
 
+      - name: Robot form validation
+        run: node --experimental-strip-types --test tests/robot-form.test.mjs
+
       - name: Production build
         run: pnpm build
 

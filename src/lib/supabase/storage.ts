@@ -5,7 +5,7 @@ import type { Database } from "@/types/database";
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 const imageExtensions = new Set(["avif", "gif", "jpeg", "jpg", "png", "webp"]);
 
-export type ContentBucket = "avatars" | "blog" | "gallery";
+export type ContentBucket = "avatars" | "blog" | "gallery" | "robots";
 
 export function validateImageFile(file: File) {
   const extension = file.name.split(".").pop()?.toLocaleLowerCase("pt-BR") ?? "";
@@ -58,3 +58,4 @@ export function getPublicImageUrl(
   if (!path) return null;
   return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
 }
+
