@@ -12,6 +12,7 @@ import { GalleryManager } from "@/features/admin/gallery-manager";
 import { TeamManager } from "@/features/admin/team-manager";
 import { RobotsManager } from "@/features/admin/robots-manager";
 import { ProjectsManager } from "@/features/admin/projects-manager";
+import { UsersManager } from "@/features/admin/users-manager";
 
 interface AdminSectionProps {
   section: string;
@@ -79,6 +80,10 @@ function AdminSectionContent({ section, session }: AdminSectionProps & { session
 
   if (section === "projetos") {
     return <ProjectsManager session={session} />;
+  }
+
+  if (section === "usuarios") {
+    return <UsersManager session={session} />;
   }
 
   return (

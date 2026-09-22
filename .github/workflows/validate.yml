@@ -50,3 +50,6 @@ jobs:
       - name: Production build
         run: pnpm build
 
+      - name: User administration authorization tests
+        run: node --experimental-strip-types --test tests/admin-users.test.mjs
+
