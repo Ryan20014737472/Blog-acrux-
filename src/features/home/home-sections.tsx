@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { ScrollReveal } from "@/components/animations/scroll-reveal";
 import { ArrowLink } from "@/components/ui/arrow-link";
 import { PlaceholderMedia } from "@/components/ui/placeholder-media";
+import { TeamPreviewCards } from "@/features/home/team-preview";
 
 interface SectionLeadProps {
   eyebrow: string;
@@ -158,21 +159,7 @@ export function TeamPreview() {
           href="/equipe"
           title="Uma constelação se forma com muitas perspectivas."
         />
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {["Perfil da equipe", "Perfil da equipe", "Perfil da equipe"].map((title, index) => (
-            <PreviewCard
-              description="Conteúdo da equipe será adicionado posteriormente."
-              eyebrow="Integrante em breve"
-              href="/equipe"
-              index={index}
-              key={`${title}-${index}`}
-              mediaLabel="Foto de integrante pendente"
-              title={title}
-            >
-              <p className="mt-4 text-xs font-bold uppercase tracking-[0.13em] text-white/62">Área e função pendentes</p>
-            </PreviewCard>
-          ))}
-        </div>
+        <TeamPreviewCards />
       </div>
     </section>
   );
