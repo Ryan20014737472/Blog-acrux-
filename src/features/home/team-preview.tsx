@@ -17,7 +17,7 @@ export function TeamPreviewCards() {
   useEffect(() => {
     const client = createSupabaseBrowserClient();
     if (!client) { setLoaded(true); return; }
-    void client.from("team_members").select("*").eq("is_published", true).order("display_order").order("name").limit(3)
+    void client.from("team_members").select("*").eq("is_published", true).eq("is_home_featured", true).order("display_order").order("name").limit(3)
       .then(({ data }) => { setMembers(data ?? []); setLoaded(true); });
   }, []);
 

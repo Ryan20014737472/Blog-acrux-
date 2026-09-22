@@ -31,9 +31,9 @@ export interface Database {
         Relationships: EmptyRelationships;
       };
       team_members: {
-        Row: { id: string; profile_id: string | null; slug: string; name: string; area: string | null; role_title: string | null; short_bio: string | null; photo_path: string | null; display_order: number; is_published: boolean; created_at: string; updated_at: string };
-        Insert: { id?: string; profile_id?: string | null; slug: string; name: string; area?: string | null; role_title?: string | null; short_bio?: string | null; photo_path?: string | null; display_order?: number; is_published?: boolean };
-        Update: { profile_id?: string | null; slug?: string; name?: string; area?: string | null; role_title?: string | null; short_bio?: string | null; photo_path?: string |null; display_order?: number; is_published?: boolean };
+        Row: { id: string; profile_id: string | null; slug: string; name: string; area: string | null; role_title: string | null; short_bio: string | null; photo_path: string | null; display_order: number; is_published: boolean; is_home_featured: boolean; created_at: string; updated_at: string };
+        Insert: { id?: string; profile_id?: string | null; slug: string; name: string; area?: string | null; role_title?: string | null; short_bio?: string | null; photo_path?: string | null; display_order?: number; is_published?: boolean; is_home_featured?: boolean };
+        Update: { profile_id?: string | null; slug?: string; name?: string; area?: string | null; role_title?: string | null; short_bio?: string | null; photo_path?: string | null; display_order?: number; is_published?: boolean; is_home_featured?: boolean };
         Relationships: EmptyRelationships;
       };
       categories: {

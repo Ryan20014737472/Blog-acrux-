@@ -19,6 +19,7 @@ interface TeamDraft {
   displayOrder: string;
   id: string | null;
   isPublished: boolean;
+  isHomeFeatured: boolean;
   name: string;
   photoPath: string | null;
   roleTitle: string;
@@ -36,6 +37,7 @@ const emptyDraft: TeamDraft = {
   photoPath: null,
   displayOrder: "0",
   isPublished: false,
+  isHomeFeatured: false,
 };
 
 function toDraft(member: TeamMemberRow): TeamDraft {
@@ -49,6 +51,7 @@ function toDraft(member: TeamMemberRow): TeamDraft {
     photoPath: member.photo_path,
     displayOrder: String(member.display_order),
     isPublished: member.is_published,
+    isHomeFeatured: member.is_home_featured,
   };
 }
 
@@ -71,6 +74,8 @@ export function TeamManager({ session }: TeamManagerProps) {
   const [error, setError] = useState<string | null>(null);
 
   const canManage = session.role === "admin";
+  const homeFeaturedCount = members.filter((member) => member.is_home_featured).length;
+  const homeSlotAvailable = draft.isHomeFeatured || homeFeaturedCount < 3;
   const browserClient = createSupabaseBrowserClient();
   const photoUrl = browserClient ? getPublicImageUrl(browserClient, "avatars", draft.photoPath) : null;
 
@@ -161,6 +166,7 @@ export function TeamManager({ session }: TeamManagerProps) {
       photo_path: draft.photoPath,
       display_order: getNumber(draft.displayOrder),
       is_published: draft.isPublished,
+      is_home_featured: draft.isHomeFeatured,
     };
 
     const result = draft.id
@@ -233,7 +239,7 @@ export function TeamManager({ session }: TeamManagerProps) {
             <div className="grid gap-5 sm:grid-cols-2"><label className="grid gap-2 text-sm font-bold text-white" htmlFor="member-area">Área<select className="admin-input" id="member-area" onChange={(event) => setDraft((current) => ({ ...current, area: event.target.value }))} value={draft.area}><option value="">Selecionar área</option>{teamAreas.map((area) => <option key={area} value={area}>{area}</option>)}</select></label><label className="grid gap-2 text-sm font-bold text-white" htmlFor="member-role">Função<input className="admin-input" id="member-role" onChange={(event) => setDraft((current) => ({ ...current, roleTitle: event.target.value }))} value={draft.roleTitle} /></label></div>
             <label className="grid gap-2 text-sm font-bold text-white" htmlFor="member-bio">Descrição curta<textarea className="admin-input min-h-30 resize-y" id="member-bio" maxLength={500} onChange={(event) => setDraft((current) => ({ ...current, shortBio: event.target.value }))} value={draft.shortBio} /></label>
             <div className="grid gap-3"><label className="grid gap-2 text-sm font-bold text-white" htmlFor="member-photo">Foto<input accept="image/avif,image/gif,image/jpeg,image/png,image/webp" className="admin-file-input" disabled={isUploading} id="member-photo" onChange={uploadPhoto} type="file" /></label>{photoUrl ? <img alt={`Prévia de ${draft.name || "integrante"}`} className="max-h-80 w-full rounded-2xl border border-white/10 object-cover" src={photoUrl} /> : <p className="text-sm text-acrux-muted">Nenhuma foto enviada.</p>}</div>
-            <div className="grid gap-4 sm:grid-cols-[1fr_auto]"><label className="grid gap-2 text-sm font-bold text-white" htmlFor="member-order">Ordem de exibição<input className="admin-input" id="member-order" inputMode="numeric" min="0" onChange={(event) => setDraft((current) => ({ ...current, displayOrder: event.target.value }))} type="number" value={draft.displayOrder} /></label><label className="flex min-h-12 items-center gap-3 rounded-xl border border-white/12 bg-[#020817]/45 px-4 text-sm font-bold text-white"><input checked={draft.isPublished} onChange={(event) => setDraft((current) => ({ ...current, isPublished: event.target.checked }))} type="checkbox" />Publicar perfil</label></div>
+            <div className="grid gap-4 sm:grid-cols-[1fr_auto]"><label className="grid gap-2 text-sm font-bold text-white" htmlFor="member-order">Ordem de exibição<input className="admin-input" id="member-order" inputMode="numeric" min="0" onChange={(event) => setDraft((current) => ({ ...current, displayOrder: event.target.value }))} type="number" value={draft.displayOrder} /></label><div className="grid gap-3"><label className="flex min-h-12 items-center gap-3 rounded-xl border border-white/12 bg-[#020817]/45 px-4 text-sm font-bold text-white"><input checked={draft.isPublished} onChange={(event) => setDraft((current) => ({ ...current, isPublished: event.target.checked }))} type="checkbox" />Publicar perfil</label><label className={`flex min-h-12 items-center gap-3 rounded-xl border px-4 text-sm font-bold ${homeSlotAvailable ? "border-cyan-200/15 bg-cyan-300/5 text-white" : "border-white/8 bg-white/3 text-acrux-muted"}`}><input checked={draft.isHomeFeatured} disabled={!homeSlotAvailable} onChange={(event) => setDraft((current) => ({ ...current, isHomeFeatured: event.target.checked, isPublished: event.target.checked ? true : current.isPublished }))} type="checkbox" />Exibir na Home ({homeFeaturedCount}/3)</label>{!homeSlotAvailable ? <p className="text-xs leading-5 text-acrux-muted">Limite atingido. Remova outro destaque para liberar esta vaga.</p> : null}</div></div>
           </div>
           {error ? <p className="mt-6 rounded-2xl border border-red-300/22 bg-red-950/24 px-4 py-3 text-sm text-red-100" role="alert">{error}</p> : null}{feedback ? <p className="mt-6 rounded-2xl border border-cyan-200/18 bg-cyan-300/8 px-4 py-3 text-sm text-acrux-cyan-bright" role="status">{feedback}</p> : null}
           <button className="button-primary mt-7" disabled={isSaving || isUploading} type="submit">{isSaving ? "Salvando…" : draft.id ? "Salvar alterações" : "Cadastrar integrante"}</button>
@@ -242,3 +248,4 @@ export function TeamManager({ session }: TeamManagerProps) {
     </AdminWorkspace>
   );
 }
+
