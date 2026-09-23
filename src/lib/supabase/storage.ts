@@ -5,7 +5,7 @@ import type { Database } from "@/types/database";
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 const imageExtensions = new Set(["avif", "gif", "jpeg", "jpg", "png", "webp"]);
 
-export type ContentBucket = "avatars" | "blog" | "gallery" | "robots" | "projects";
+export type ContentBucket = "avatars" | "blog" | "gallery" | "robots" | "projects" | "sponsors";
 
 export function validateImageFile(file: File) {
   const extension = file.name.split(".").pop()?.toLocaleLowerCase("pt-BR") ?? "";

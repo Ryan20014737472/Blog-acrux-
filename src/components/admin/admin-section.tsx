@@ -13,6 +13,7 @@ import { TeamManager } from "@/features/admin/team-manager";
 import { RobotsManager } from "@/features/admin/robots-manager";
 import { ProjectsManager } from "@/features/admin/projects-manager";
 import { UsersManager } from "@/features/admin/users-manager";
+import { SponsorsManager } from "@/features/admin/sponsors-manager";
 
 interface AdminSectionProps {
   section: string;
@@ -84,6 +85,10 @@ function AdminSectionContent({ section, session }: AdminSectionProps & { session
 
   if (section === "usuarios") {
     return <UsersManager session={session} />;
+  }
+
+  if (section === "patrocinadores") {
+    return <SponsorsManager session={session} />;
   }
 
   return (

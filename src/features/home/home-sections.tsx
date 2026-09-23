@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { ScrollReveal } from "@/components/animations/scroll-reveal";
@@ -6,6 +5,7 @@ import { ArrowLink } from "@/components/ui/arrow-link";
 import { PlaceholderMedia } from "@/components/ui/placeholder-media";
 import { TeamPreviewCards } from "@/features/home/team-preview";
 import { GalleryPreviewCards } from "@/features/home/gallery-preview";
+import { SponsorsPreview } from "@/features/home/sponsors-preview";
 
 interface SectionLeadProps {
   eyebrow: string;
@@ -266,16 +266,7 @@ export function GalleryAndSponsorsPreview() {
         />
         <GalleryPreviewCards />
 
-        <div className="glass-panel mt-14 rounded-3xl p-6 sm:p-8">
-          <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
-            <div>
-              <p className="eyebrow">Patrocinadores e parceiros</p>
-              <h2 className="mt-4 text-2xl font-bold tracking-[-0.04em] text-white">Espaço reservado para quem apoia a jornada da ACRUX.</h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-acrux-muted">Marcas e informações de parceiros serão adicionadas somente após confirmação da equipe.</p>
-            </div>
-            <Link className="button-secondary shrink-0" href="/sobre#parcerias">Conhecer parcerias</Link>
-          </div>
-        </div>
+        <SponsorsPreview />
       </div>
     </section>
   );
