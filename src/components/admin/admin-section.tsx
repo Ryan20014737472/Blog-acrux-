@@ -14,6 +14,7 @@ import { RobotsManager } from "@/features/admin/robots-manager";
 import { ProjectsManager } from "@/features/admin/projects-manager";
 import { UsersManager } from "@/features/admin/users-manager";
 import { SponsorsManager } from "@/features/admin/sponsors-manager";
+import { SeasonsManager } from "@/features/admin/seasons-manager";
 
 interface AdminSectionProps {
   section: string;
@@ -89,6 +90,10 @@ function AdminSectionContent({ section, session }: AdminSectionProps & { session
 
   if (section === "patrocinadores") {
     return <SponsorsManager session={session} />;
+  }
+
+  if (section === "temporadas") {
+    return <SeasonsManager session={session} />;
   }
 
   return (
