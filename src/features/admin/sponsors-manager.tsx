@@ -6,6 +6,7 @@ import Image from "next/image";
 
 import type { AdminSession } from "@/components/admin/admin-gate";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
+import { compareSponsors, normalizedSponsorTier, sponsorTiers } from "@/config/sponsor-tiers";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getPublicImageUrl, uploadPublicImage } from "@/lib/supabase/storage";
 import type { Database } from "@/types/database";
@@ -34,7 +35,7 @@ export function SponsorsManager({ session }: { session: AdminSession }) {
     if (!supabase) { setError("Supabase não configurado."); setLoading(false); return; }
     const { data, error: loadError } = await supabase.from("sponsors").select("*").order("display_order").order("name");
     if (loadError) setError("Não foi possível carregar os patrocinadores.");
-    else setItems(data ?? []);
+    else setItems([...(data ?? [])].sort(compareSponsors));
     setLoading(false);
   }, []);
 
@@ -60,6 +61,8 @@ export function SponsorsManager({ session }: { session: AdminSession }) {
     const name = draft.name.trim();
     const website = draft.websiteUrl.trim();
     if (!name) { setError("Informe o nome do patrocinador."); return; }
+    const tier = normalizedSponsorTier(draft.tier);
+    if (!tier) { setError("Selecione o nível Ouro, Prata ou Bronze."); return; }
     if (website) {
       try { if (new URL(website).protocol !== "https:") throw new Error(); }
       catch { setError("Informe um endereço HTTPS válido para o site."); return; }
@@ -69,7 +72,7 @@ export function SponsorsManager({ session }: { session: AdminSession }) {
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;
     setBusy(true); setError(""); setMessage("");
-    const payload = { name, website_url: website || null, logo_path: draft.logoPath, tier: draft.tier.trim() || null, display_order: displayOrder, is_published: draft.isPublished };
+    const payload = { name, website_url: website || null, logo_path: draft.logoPath, tier, display_order: displayOrder, is_published: draft.isPublished };
     const result = draft.id
       ? await supabase.from("sponsors").update(payload).eq("id", draft.id).select().single()
       : await supabase.from("sponsors").insert(payload).select().single();
@@ -103,7 +106,8 @@ export function SponsorsManager({ session }: { session: AdminSession }) {
         <h2 className="text-xl font-bold text-white">{draft.id ? "Editar parceiro" : "Novo parceiro"}</h2>
         <label className="block text-sm text-white">Nome *<input className="mt-2 w-full rounded-xl border border-white/15 bg-white/5 p-3 text-white" disabled={!canManage || busy} maxLength={160} onChange={(e) => setDraft({ ...draft, name: e.target.value })} required value={draft.name} /></label>
         <label className="block text-sm text-white">Site oficial (HTTPS)<input className="mt-2 w-full rounded-xl border border-white/15 bg-white/5 p-3 text-white" disabled={!canManage || busy} onChange={(e) => setDraft({ ...draft, websiteUrl: e.target.value })} placeholder="https://" type="url" value={draft.websiteUrl} /></label>
-        <div className="grid gap-5 sm:grid-cols-2"><label className="block text-sm text-white">Categoria / cota<input className="mt-2 w-full rounded-xl border border-white/15 bg-white/5 p-3 text-white" disabled={!canManage || busy} maxLength={80} onChange={(e) => setDraft({ ...draft, tier: e.target.value })} value={draft.tier} /></label><label className="block text-sm text-white">Ordem de exibição<input className="mt-2 w-full rounded-xl border border-white/15 bg-white/5 p-3 text-white" disabled={!canManage || busy} min="0" onChange={(e) => setDraft({ ...draft, displayOrder: e.target.value })} required type="number" value={draft.displayOrder} /></label></div>
+        <div className="grid gap-5 sm:grid-cols-2"><label className="block text-sm text-white">Nível de patrocínio *<select className="mt-2 w-full rounded-xl border border-white/15 bg-acrux-ink p-3 text-white" disabled={!canManage || busy} onChange={(e) => setDraft({ ...draft, tier: e.target.value })} required value={draft.tier}><option value="">Selecione um nível</option>{draft.tier && !normalizedSponsorTier(draft.tier) && <option value={draft.tier}>Categoria antiga: {draft.tier}</option>}{sponsorTiers.map((tier) => <option key={tier} value={tier}>{tier}</option>)}</select></label><label className="block text-sm text-white">Ordem dentro do nível<input className="mt-2 w-full rounded-xl border border-white/15 bg-white/5 p-3 text-white" disabled={!canManage || busy} min="0" onChange={(e) => setDraft({ ...draft, displayOrder: e.target.value })} required type="number" value={draft.displayOrder} /></label></div>
+        <p className="text-xs leading-5 text-acrux-muted">No site, a ordem é Ouro → Prata → Bronze. Dentro de cada nível, vale a ordem numérica acima.</p>
         <div><label className="block text-sm text-white" htmlFor="sponsor-logo">Logo oficial</label><input accept="image/avif,image/gif,image/jpeg,image/png,image/webp" className="mt-2 block w-full text-sm text-acrux-muted" disabled={!canManage || busy} id="sponsor-logo" onChange={uploadLogo} type="file" />{logoUrl && <Image alt={`Logo de ${draft.name || "patrocinador"}`} className="mt-4 max-h-32 max-w-52 object-contain" height={128} src={logoUrl} unoptimized width={208} />}{draft.logoPath && canManage && <button className="mt-3 block text-sm text-acrux-cyan-bright" onClick={() => setDraft({ ...draft, logoPath: null })} type="button">Remover logo do cadastro</button>}</div>
         <label className="flex items-center gap-3 text-sm text-white"><input checked={draft.isPublished} disabled={!canManage || busy} onChange={(e) => setDraft({ ...draft, isPublished: e.target.checked })} type="checkbox" />Exibir no site público</label>
         {error && <p aria-live="assertive" className="text-sm text-red-200">{error}</p>}{message && <p aria-live="polite" className="text-sm text-acrux-cyan-bright">{message}</p>}
