@@ -67,9 +67,9 @@ export interface Database {
         Relationships: EmptyRelationships;
       };
       galleries: {
-        Row: { id: string; season_id: string | null; competition_id: string | null; project_id: string | null; slug: string; title: string; category: string | null; description: string | null; cover_path: string | null; is_published: boolean; created_at: string; updated_at: string };
-        Insert: { id?: string; season_id?: string | null; competition_id?: string | null; project_id?: string | null; slug: string; title: string; category?: string | null; description?: string | null; cover_path?: string | null; is_published?: boolean };
-        Update: { season_id?: string | null; competition_id?: string | null; project_id?: string | null; slug?: string; title?: string; category?: string | null; description?: string | null; cover_path?: string | null; is_published?: boolean };
+        Row: { id: string; season_id: string | null; competition_id: string | null; project_id: string | null; slug: string; title: string; category: string | null; description: string | null; cover_path: string | null; is_published: boolean; is_home_featured: boolean; created_at: string; updated_at: string };
+        Insert: { id?: string; season_id?: string | null; competition_id?: string | null; project_id?: string | null; slug: string; title: string; category?: string | null; description?: string | null; cover_path?: string | null; is_published?: boolean; is_home_featured?: boolean };
+        Update: { season_id?: string | null; competition_id?: string | null; project_id?: string | null; slug?: string; title?: string; category?: string | null; description?: string | null; cover_path?: string | null; is_published?: boolean; is_home_featured?: boolean };
         Relationships: EmptyRelationships;
       };
       gallery_images: {

@@ -5,6 +5,7 @@ import { ScrollReveal } from "@/components/animations/scroll-reveal";
 import { ArrowLink } from "@/components/ui/arrow-link";
 import { PlaceholderMedia } from "@/components/ui/placeholder-media";
 import { TeamPreviewCards } from "@/features/home/team-preview";
+import { GalleryPreviewCards } from "@/features/home/gallery-preview";
 
 interface SectionLeadProps {
   eyebrow: string;
@@ -263,24 +264,7 @@ export function GalleryAndSponsorsPreview() {
           href="/galeria"
           title="Os registros visuais da ACRUX terão seu próprio arquivo."
         />
-        <div className="mt-10 grid auto-rows-[8rem] grid-cols-2 gap-3 sm:grid-cols-4 sm:auto-rows-[10rem]">
-          {[
-            "Foto em destaque",
-            "Bastidores",
-            "Robô",
-            "Evento",
-            "Projeto",
-            "Competição",
-          ].map((label, index) => (
-            <ScrollReveal
-              className={index === 0 ? "col-span-2 row-span-2" : index === 3 ? "col-span-2" : ""}
-              delay={index * 0.04}
-              key={label}
-            >
-              <div className="placeholder-media h-full min-h-0 rounded-xl"><span>{label} — em breve</span></div>
-            </ScrollReveal>
-          ))}
-        </div>
+        <GalleryPreviewCards />
 
         <div className="glass-panel mt-14 rounded-3xl p-6 sm:p-8">
           <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">

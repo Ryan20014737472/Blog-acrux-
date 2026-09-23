@@ -19,6 +19,7 @@ interface GalleryDraft {
   description: string;
   id: string | null;
   isPublished: boolean;
+  isHomeFeatured: boolean;
   slug: string;
   title: string;
 }
@@ -31,6 +32,7 @@ const emptyDraft: GalleryDraft = {
   description: "",
   coverPath: null,
   isPublished: false,
+  isHomeFeatured: false,
 };
 
 function toDraft(gallery: GalleryRow): GalleryDraft {
@@ -42,6 +44,7 @@ function toDraft(gallery: GalleryRow): GalleryDraft {
     description: gallery.description ?? "",
     coverPath: gallery.cover_path,
     isPublished: gallery.is_published,
+    isHomeFeatured: gallery.is_home_featured,
   };
 }
 
@@ -160,6 +163,8 @@ export function GalleryManager({ session }: GalleryManagerProps) {
   const [error, setError] = useState<string | null>(null);
 
   const isAdmin = session.role === "admin";
+  const homeFeaturedCount = galleries.filter((gallery) => gallery.is_home_featured).length;
+  const homeSlotAvailable = draft.isHomeFeatured || homeFeaturedCount < 6;
   const browserClient = createSupabaseBrowserClient();
   const coverUrl = browserClient ? getPublicImageUrl(browserClient, "gallery", draft.coverPath) : null;
 
@@ -247,6 +252,7 @@ export function GalleryManager({ session }: GalleryManagerProps) {
       description: draft.description.trim() || null,
       cover_path: draft.coverPath,
       is_published: draft.isPublished,
+      is_home_featured: draft.isHomeFeatured,
     };
     const result = draft.id
       ? await supabase.from("galleries").update(payload).eq("id", draft.id).select().single()
@@ -371,7 +377,7 @@ export function GalleryManager({ session }: GalleryManagerProps) {
         <div className="grid gap-6">
           {isAdmin ? <form className="glass-panel rounded-3xl p-5 sm:p-7" onSubmit={saveGallery}>
             <div className="flex items-start justify-between gap-4"><div><p className="text-lg font-bold text-white">{draft.id ? "Editar álbum" : "Novo álbum"}</p><p className="mt-1 text-sm text-acrux-muted">Salve o álbum antes de enviar imagens.</p></div>{draft.id ? <button className="rounded-full border border-red-200/20 px-4 py-2 text-sm font-bold text-red-100" disabled={isSaving} onClick={deleteGallery} type="button">Excluir</button> : null}</div>
-            <div className="mt-7 grid gap-5"><label className="grid gap-2 text-sm font-bold text-white" htmlFor="gallery-title">Título<input className="admin-input" id="gallery-title" onChange={(event) => updateTitle(event.target.value)} required value={draft.title} /></label><label className="grid gap-2 text-sm font-bold text-white" htmlFor="gallery-slug">Endereço do álbum<input className="admin-input" id="gallery-slug" onChange={(event) => setDraft((current) => ({ ...current, slug: slugify(event.target.value) }))} required value={draft.slug} /></label><label className="grid gap-2 text-sm font-bold text-white" htmlFor="gallery-category">Categoria<input className="admin-input" id="gallery-category" onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value }))} placeholder="Ex.: competição, bastidores, projeto" value={draft.category} /></label><label className="grid gap-2 text-sm font-bold text-white" htmlFor="gallery-description">Descrição<textarea className="admin-input min-h-25 resize-y" id="gallery-description" onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))} value={draft.description} /></label><label className="flex min-h-12 items-center gap-3 rounded-xl border border-white/12 bg-[#020817]/45 px-4 text-sm font-bold text-white"><input checked={draft.isPublished} onChange={(event) => setDraft((current) => ({ ...current, isPublished: event.target.checked }))} type="checkbox" />Publicar álbum</label>{coverUrl ? <img alt="Capa atual do álbum" className="max-h-68 w-full rounded-2xl border border-white/10 object-cover" src={coverUrl} /> : null}</div>
+            <div className="mt-7 grid gap-5"><label className="grid gap-2 text-sm font-bold text-white" htmlFor="gallery-title">Título<input className="admin-input" id="gallery-title" onChange={(event) => updateTitle(event.target.value)} required value={draft.title} /></label><label className="grid gap-2 text-sm font-bold text-white" htmlFor="gallery-slug">Endereço do álbum<input className="admin-input" id="gallery-slug" onChange={(event) => setDraft((current) => ({ ...current, slug: slugify(event.target.value) }))} required value={draft.slug} /></label><label className="grid gap-2 text-sm font-bold text-white" htmlFor="gallery-category">Categoria<input className="admin-input" id="gallery-category" onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value }))} placeholder="Ex.: competição, bastidores, projeto" value={draft.category} /></label><label className="grid gap-2 text-sm font-bold text-white" htmlFor="gallery-description">Descrição<textarea className="admin-input min-h-25 resize-y" id="gallery-description" onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))} value={draft.description} /></label><div className="grid gap-3"><label className="flex min-h-12 items-center gap-3 rounded-xl border border-white/12 bg-[#020817]/45 px-4 text-sm font-bold text-white"><input checked={draft.isPublished} onChange={(event) => setDraft((current) => ({ ...current, isPublished: event.target.checked }))} type="checkbox" />Publicar álbum</label><label className={`flex min-h-12 items-center gap-3 rounded-xl border px-4 text-sm font-bold ${homeSlotAvailable ? "border-cyan-200/15 bg-cyan-300/5 text-white" : "border-white/8 bg-white/3 text-acrux-muted"}`}><input checked={draft.isHomeFeatured} disabled={!homeSlotAvailable} onChange={(event) => setDraft((current) => ({ ...current, isHomeFeatured: event.target.checked, isPublished: event.target.checked ? true : current.isPublished }))} type="checkbox" />Exibir na Home ({homeFeaturedCount}/6)</label>{!homeSlotAvailable ? <p className="text-xs leading-5 text-acrux-muted">Limite atingido. Remova outro álbum em destaque para liberar uma vaga.</p> : null}</div>{coverUrl ? <img alt="Capa atual do álbum" className="max-h-68 w-full rounded-2xl border border-white/10 object-cover" src={coverUrl} /> : null}</div>
             <button className="button-primary mt-7" disabled={isSaving} type="submit">{isSaving ? "Salvando…" : draft.id ? "Salvar alterações" : "Criar álbum"}</button>
           </form> : <div className="glass-panel rounded-3xl p-6 sm:p-8"><p className="text-lg font-bold text-white">Envio de imagens</p><p className="mt-3 text-base leading-7 text-acrux-muted">Selecione um álbum existente para enviar ou organizar as imagens. Criar e publicar álbuns exige uma conta administradora.</p></div>}
 
@@ -382,3 +388,4 @@ export function GalleryManager({ session }: GalleryManagerProps) {
     </AdminWorkspace>
   );
 }
+
