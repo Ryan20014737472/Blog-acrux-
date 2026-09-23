@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { createActivationClient } from "@/lib/supabase/activation-client";
 
 type ActivationState = "checking" | "ready" | "invalid" | "success" | "unconfigured";
 
@@ -13,10 +13,12 @@ export function ActivateAccountForm() {
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [linkError, setLinkError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activationClient] = useState(createActivationClient);
 
   useEffect(() => {
-    const supabase = createSupabaseBrowserClient();
+    const supabase = activationClient;
 
     if (!supabase) {
       setActivationState("unconfigured");
@@ -24,6 +26,10 @@ export function ActivateAccountForm() {
     }
 
     let isCurrent = true;
+
+    const url = new URL(window.location.href);
+    const fragment = new URLSearchParams(url.hash.slice(1));
+    setLinkError(Boolean(url.searchParams.get("error") || fragment.get("error")));
 
     async function checkInvitationSession() {
       const {
@@ -49,7 +55,7 @@ export function ActivateAccountForm() {
       isCurrent = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [activationClient]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -60,7 +66,7 @@ export function ActivateAccountForm() {
       return;
     }
 
-    const supabase = createSupabaseBrowserClient();
+    const supabase = activationClient;
 
     if (!supabase) {
       setError("A autenticação ainda não foi configurada neste ambiente.");
@@ -92,7 +98,7 @@ export function ActivateAccountForm() {
   if (activationState === "invalid") {
     return (
       <div className="grid gap-4">
-        <p className="text-base leading-7 text-acrux-muted">Este convite não está ativo. Solicite um novo convite à equipe responsável e abra o link diretamente pelo e-mail.</p>
+        <p className="text-base leading-7 text-acrux-muted">{linkError ? "Este link foi recusado pelo Supabase. Ele pode ter expirado ou já ter sido usado." : "Este convite não está ativo ou não contém uma sessão válida."} Peça à equipe responsável um novo convite ou link de recuperação de senha. Abra somente o link mais recente, no celular ou computador.</p>
         <Link className="button-secondary w-fit" href="/admin/login">Voltar ao login</Link>
       </div>
     );
@@ -142,3 +148,4 @@ export function ActivateAccountForm() {
     </form>
   );
 }
+
