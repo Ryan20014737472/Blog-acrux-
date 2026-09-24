@@ -8,6 +8,7 @@ export interface UserService {
   invite(email: string, redirect: string): Promise<Account>;
   update(id: string, expected: string, role: Role, name: string | null): Promise<boolean>;
   recover(email: string, redirect: string): Promise<void>;
+  delete(id: string): Promise<void>;
 }
 const origin = "https://ryan20014737472.github.io";
 const activation = `${origin}/Blog-acrux-/admin/ativar-conta/`;
@@ -24,6 +25,7 @@ export function createHandler(serviceFor: (token: string) => UserService) {
     if (request.method !== "POST") return reply(405, { error: "Método não permitido." });
     const token = request.headers.get("authorization")?.match(/^Bearer (\S+)$/i)?.[1];
     if (!token) return reply(401, { error: "Entre novamente para continuar." });
+    let action = "";
     try {
       const service = serviceFor(token);
       const actor = await service.actor(token);
@@ -34,6 +36,7 @@ export function createHandler(serviceFor: (token: string) => UserService) {
       let input: Record<string, unknown>;
       try { input = JSON.parse(raw); } catch { return reply(400, { error: "Solicitação inválida." }); }
       if (!input || typeof input !== "object" || Array.isArray(input)) return reply(400, { error: "Solicitação inválida." });
+      action = typeof input.action === "string" ? input.action : "";
       if (input.action === "list") {
         const page = input.page ?? 1;
         if (!Number.isInteger(page) || Number(page) < 1 || Number(page) > 10000) return reply(400, { error: "Página inválida." });
@@ -60,8 +63,22 @@ export function createHandler(serviceFor: (token: string) => UserService) {
         }
         return reply(200, { message: "Convite enviado e permissão configurada. A pessoa define a própria senha pelo e-mail." });
       }
-      if (!["update", "recover"].includes(String(input.action)) || typeof input.id !== "string" || !uuid.test(input.id)) return reply(400, { error: "Operação inválida." });
+      if (!["update", "recover", "delete"].includes(String(input.action)) || typeof input.id !== "string" || !uuid.test(input.id)) return reply(400, { error: "Operação inválida." });
       const [profile] = await service.profiles([input.id]);
+      if (input.action === "delete") {
+        if (input.id === actor.id) return reply(409, { error: "Você não pode remover sua própria conta." });
+        if (profile?.role === "admin") return reply(409, { error: "Administradores estão protegidos contra exclusão neste painel. Revise esse acesso diretamente no Supabase." });
+        if (input.updatedAt !== (profile?.updated_at ?? null)) return reply(409, { error: "A conta mudou. Atualize a lista antes de remover." });
+        let exists = false;
+        for (let page = 1; ; page++) {
+          const users = await service.users(page);
+          if (users.some((user) => user.id === input.id)) { exists = true; break; }
+          if (users.length < 50) break;
+        }
+        if (!exists) return reply(404, { error: "Conta não encontrada. Atualize a lista." });
+        await service.delete(input.id);
+        return reply(200, { message: "Conta removida. Convites antigos não podem ser usados; para voltar, envie um novo convite." });
+      }
       if (!profile) return reply(404, { error: "Perfil não encontrado." });
       if (input.action === "update") {
         if (!roles.includes(input.role as Role) || typeof input.displayName !== "string" || input.displayName.trim().length > 100 || typeof input.updatedAt !== "string") return reply(400, { error: "Nome ou permissão inválidos." });
@@ -80,6 +97,7 @@ export function createHandler(serviceFor: (token: string) => UserService) {
         if (users.length < 50) return reply(404, { error: "Conta não encontrada." });
       }
     } catch {
+      if (action === "delete") return reply(503, { error: "Não foi possível remover a conta. Verifique se ela possui arquivos próprios no Storage do Supabase e tente novamente." });
       return reply(503, { error: "Não foi possível concluir. Verifique a conexão, a configuração de e-mail e os limites de envio do Supabase. Atualize a lista antes de tentar novamente." });
     }
   };

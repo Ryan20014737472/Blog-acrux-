@@ -7,11 +7,13 @@ import type { UserRole } from "@/types/content";
 export const userField = "min-h-12 w-full rounded-xl border border-white/15 bg-[#020817] px-3 py-2 text-base text-white disabled:opacity-60";
 export const roleLabels = { admin: "Administrador", editor: "Editor", visitor: "Sem acesso ao painel" };
 
-export function UserAccessForm({ user, busy, onSave, onRecover, onDirty }: {
+export function UserAccessForm({ user, busy, canRemove, onSave, onRecover, onRemove, onDirty }: {
   user: ManagedUser;
   busy: boolean;
+  canRemove: boolean;
   onSave: (role: UserRole, displayName: string) => Promise<void>;
   onRecover: () => Promise<void>;
+  onRemove: () => Promise<void>;
   onDirty: (id: string, dirty: boolean) => void;
 }) {
   const [name, setName] = useState(user.displayName);
@@ -32,6 +34,7 @@ export function UserAccessForm({ user, busy, onSave, onRecover, onDirty }: {
     <div className="flex flex-wrap gap-3">
       <button className="button-primary" disabled={busy || !dirty || !user.updatedAt} type="submit">Salvar alterações</button>
       <button className="button-secondary" disabled={busy || user.role === "visitor" || dirty} type="button" onClick={() => { if (window.confirm(`Enviar um novo link para definir senha a ${user.email}?`)) void onRecover(); }}>Enviar link de senha</button>
+      {canRemove && <button className="min-h-12 rounded-xl border border-red-300/40 px-4 py-2 text-sm font-bold text-red-100 transition hover:bg-red-300/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300 disabled:opacity-50" disabled={busy || dirty} type="button" onClick={() => { if (window.prompt(`Remover definitivamente ${user.email}? Convites e sessões anteriores deixarão de funcionar. Para confirmar, digite o e-mail completo:`, "") === user.email) void onRemove(); }}>Remover usuário</button>}
     </div>
     {!user.updatedAt && <p className="text-sm text-amber-100">Esta conta está sem perfil. Revise a criação do perfil no Supabase.</p>}
     {dirty && <p className="text-xs text-acrux-muted">Alterações ainda não salvas. Salve antes de atualizar ou mudar de página.</p>}

@@ -40,6 +40,10 @@ Deno.serve(createHandler((token): UserService => {
       const { error } = await admin.auth.resetPasswordForEmail(email, { redirectTo });
       if (error) throw error;
     },
+    async delete(id) {
+      const { error } = await admin.auth.admin.deleteUser(id);
+      if (error) throw error;
+    },
   };
 }));
 

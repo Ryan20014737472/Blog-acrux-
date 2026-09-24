@@ -13,6 +13,7 @@ function setup(overrides = {}) {
     invite: async (...args) => { calls.push(["invite", ...args]); return row; },
     update: async (...args) => { calls.push(["update", ...args]); return true; },
     recover: async (...args) => { calls.push(["recover", ...args]); },
+    delete: async (...args) => { calls.push(["delete", ...args]); },
     ...overrides,
   };
   const handler = createHandler(() => service);
@@ -78,6 +79,31 @@ test("visitors cannot receive administrative recovery from this endpoint", async
   const { send, calls } = setup({ profiles: async () => [{ id, role: "visitor" }] });
   assert.equal((await send({ action: "recover", id })).status, 400);
   assert.deepEqual(calls, []);
+});
+test("removing a non-admin account deletes its Auth user, so an old invitation cannot be reused", async () => {
+  const { send, calls } = setup();
+  const response = await send({ action: "delete", id, updatedAt: "v1" });
+  assert.equal(response.status, 200);
+  assert.deepEqual(calls, [["delete", id]]);
+});
+test("removal protects self, administrators, stale profiles and missing users", async () => {
+  assert.equal((await setup({ actor: async () => ({ id, role: "admin" }) }).send({ action: "delete", id, updatedAt: "v1" })).status, 409);
+  assert.equal((await setup({ profiles: async () => [{ id, role: "admin", updated_at: "v1" }] }).send({ action: "delete", id, updatedAt: "v1" })).status, 409);
+  assert.equal((await setup().send({ action: "delete", id, updatedAt: "old" })).status, 409);
+  assert.equal((await setup({ users: async () => [] }).send({ action: "delete", id, updatedAt: "v1" })).status, 404);
+});
+test("an orphaned invited Auth account without a profile can still be removed", async () => {
+  const { send, calls } = setup({ profiles: async () => [] });
+  assert.equal((await send({ action: "delete", id, updatedAt: null })).status, 200);
+  assert.deepEqual(calls, [["delete", id]]);
+});
+test("failed deletion does not claim that an old invitation was revoked", async () => {
+  const { send } = setup({ delete: async () => { throw new Error("private storage details"); } });
+  const response = await send({ action: "delete", id, updatedAt: "v1" });
+  assert.equal(response.status, 503);
+  const body = await response.json();
+  assert.match(body.error, /Não foi possível remover/);
+  assert.equal(JSON.stringify(body).includes("private storage details"), false);
 });
 test("origin and HTTP method enforcement; errors do not leak internals", async () => {
   const { send, handler } = setup({ users: async () => { throw new Error("private service key"); } });

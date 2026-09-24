@@ -86,12 +86,12 @@ export function UsersManager({ session }: { session: AdminSession }) {
           <div className="flex flex-wrap items-center gap-2"><h3 className="break-all font-bold">{user.email || "Conta sem e-mail"}</h3>{user.id === result?.actorId && <span className="text-xs text-acrux-cyan-bright">Você</span>}</div>
           <p className="mt-2 text-sm text-acrux-muted">{user.confirmedAt ? "E-mail confirmado" : "Aguardando confirmação"} · {roleLabels[user.role]}</p>
           <p className="mt-1 text-xs text-acrux-muted">Último acesso: {user.lastSignInAt ? new Date(user.lastSignInAt).toLocaleString("pt-BR") : "Ainda não registrado"}</p>
-          <UserAccessForm user={user} busy={busy} onDirty={onDirty} onSave={(role, displayName) => mutate({ action: "update", id: user.id, updatedAt: user.updatedAt, role, displayName })} onRecover={() => mutate({ action: "recover", id: user.id })} />
+          <UserAccessForm user={user} busy={busy} canRemove={user.id !== result?.actorId && user.role !== "admin"} onDirty={onDirty} onSave={(role, displayName) => mutate({ action: "update", id: user.id, updatedAt: user.updatedAt, role, displayName })} onRecover={() => mutate({ action: "recover", id: user.id })} onRemove={() => mutate({ action: "delete", id: user.id, updatedAt: user.updatedAt })} />
         </article>)}
         {result && !rows.length && <p className="py-6 text-acrux-muted">Nenhuma conta encontrada nesta página.</p>}
       </div>}
       <div className="mt-6 flex flex-wrap items-center gap-4"><button className="button-secondary" disabled={page === 1 || busy || loading} onClick={() => { if (canDiscard()) setPage((value) => value - 1); }}>Anterior</button><span className="text-sm">Página {page} · até 50 contas</span><button className="button-secondary" disabled={!result?.hasMore || busy || loading} onClick={() => { if (canDiscard()) setPage((value) => value + 1); }}>Próxima</button></div>
-      <p className="mt-5 text-xs leading-6 text-acrux-muted">Para revogar o acesso de um editor, selecione “Sem acesso ao painel”. O histórico de autoria é preservado; nenhuma conta é excluída por esta tela.</p>
+      <p className="mt-5 text-xs leading-6 text-acrux-muted">“Sem acesso ao painel” mantém a conta. “Remover usuário” apaga a conta de acesso e invalida convites pendentes; um novo convite será necessário para adicioná-la outra vez. Administradores não podem ser removidos por esta tela.</p>
     </section>
   </AdminWorkspace>;
 }

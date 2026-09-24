@@ -18,9 +18,11 @@ O template de convite deve usar `{{ .ConfirmationURL }}` para respeitar o destin
 Configure SMTP e limites de envio antes de convidar muitas pessoas.
 
 Operações: list (50 contas por página), invite (editor/admin), update (nome e papel),
-recover (link de definição de senha). Não exclui contas nem remove autoria.
-Administradores não podem ser rebaixados por este endpoint; remoções deliberadas
-continuam pelo Supabase, verificando que outro administrador ativo permaneça.
+recover (link de definição de senha) e delete (contas não administradoras).
+Delete remove a conta de Auth, o perfil e convites pendentes; referências de autoria
+nos posts e vínculos da equipe tornam-se nulas, sem apagar esse conteúdo.
+Administradores não podem ser rebaixados nem excluídos por este endpoint;
+remoções deliberadas continuam pelo Supabase, verificando que outro administrador ativo permaneça.
 Esse bloqueio é do endpoint; administradores do banco mantêm seus poderes existentes.
 Visitantes e editores não podem chamar nenhuma operação.
 
