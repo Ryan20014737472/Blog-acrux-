@@ -70,7 +70,7 @@ export function Hero() {
             <HeroConstellation />
           </div>
           <motion.div
-            className="hero-logo absolute right-0 top-0 w-16 lg:w-24"
+            className="hero-logo absolute right-0 top-0 w-20 lg:w-28"
             whileHover={reduceMotion ? undefined : { scale: 1.04 }}
             transition={{ duration: 0.2 }}
           >
@@ -79,11 +79,11 @@ export function Hero() {
               <Image
                 alt="Logo oficial da ACRUX ROBOCEP"
                 className="aspect-square h-auto w-full object-cover"
-                height={96}
+                height={112}
                 priority
-                sizes="(min-width: 1024px) 96px, 64px"
+                sizes="(min-width: 1024px) 112px, 80px"
                 src={acruxLogo}
-                width={96}
+                width={112}
               />
             </div>
           </motion.div>

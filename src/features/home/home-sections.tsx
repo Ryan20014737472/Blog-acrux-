@@ -1,10 +1,8 @@
-import type { ReactNode } from "react";
-
 import { ScrollReveal } from "@/components/animations/scroll-reveal";
 import { ArrowLink } from "@/components/ui/arrow-link";
-import { PlaceholderMedia } from "@/components/ui/placeholder-media";
 import { TeamPreviewCards } from "@/features/home/team-preview";
 import { GalleryPreviewCards } from "@/features/home/gallery-preview";
+import { NewsPreviewCards } from "@/features/home/news-preview";
 import { SponsorsPreview } from "@/features/home/sponsors-preview";
 
 interface SectionLeadProps {
@@ -28,46 +26,9 @@ function SectionLead({ eyebrow, title, description, href, action }: SectionLeadP
   );
 }
 
-interface PreviewCardProps {
-  eyebrow: string;
-  title: string;
-  description: string;
-  href: string;
-  mediaLabel: string;
-  index?: number;
-  children?: ReactNode;
-}
-
-function PreviewCard({
-  eyebrow,
-  title,
-  description,
-  href,
-  mediaLabel,
-  index = 0,
-  children,
-}: PreviewCardProps) {
-  return (
-    <ScrollReveal delay={index * 0.06}>
-      <article className="glass-panel card-hover group h-full overflow-hidden rounded-2xl">
-        <PlaceholderMedia className="min-h-42 border-x-0 border-t-0" label={mediaLabel} />
-        <div className="p-5 sm:p-6">
-          <p className="text-xs font-bold uppercase tracking-[0.15em] text-acrux-cyan-bright">{eyebrow}</p>
-          <h3 className="mt-3 text-xl font-bold tracking-[-0.025em] text-white">{title}</h3>
-          <p className="mt-3 text-sm leading-6 text-acrux-muted">{description}</p>
-          {children}
-          <ArrowLink className="mt-5" href={href}>
-            Ver em breve
-          </ArrowLink>
-        </div>
-      </article>
-    </ScrollReveal>
-  );
-}
-
 export function AboutPreview() {
   return (
-    <section className="section" id="sobre-acrux">
+    <section className="section scroll-mt-24" id="sobre-acrux">
       <div className="shell grid gap-9 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
         <ScrollReveal>
           <div>
@@ -118,32 +79,7 @@ export function NewsPreview() {
           href="/blog"
           title="O que acontece na ACRUX, contado pela própria equipe."
         />
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
-          <PreviewCard
-            description="Os primeiros conteúdos editoriais serão publicados pela área administrativa."
-            eyebrow="Em breve"
-            href="/blog"
-            index={0}
-            mediaLabel="Imagem de capa do blog"
-            title="Notícias oficiais da ACRUX"
-          />
-          <PreviewCard
-            description="Relatos de eventos e competições serão organizados por temporada."
-            eyebrow="Competições"
-            href="/blog"
-            index={1}
-            mediaLabel="Imagem de competição"
-            title="Histórias que ainda serão registradas"
-          />
-          <PreviewCard
-            description="Projetos e bastidores mostrarão processos, aprendizados e colaboração."
-            eyebrow="Bastidores"
-            href="/blog"
-            index={2}
-            mediaLabel="Imagem de bastidores"
-            title="Conhecimento em construção"
-          />
-        </div>
+        <NewsPreviewCards />
       </div>
     </section>
   );
@@ -155,7 +91,7 @@ export function TeamPreview() {
       <div className="shell">
         <SectionLead
           action="Ver a equipe"
-          description="Cada perfil poderá reunir foto, área, função e uma breve apresentação. Nenhum integrante foi inventado nesta primeira etapa."
+          description="Conheça quem conecta ideias, engenharia e criatividade na ACRUX. Os perfis em destaque são escolhidos pela equipe."
           eyebrow="Pessoas que fazem"
           href="/equipe"
           title="Uma constelação se forma com muitas perspectivas."
@@ -178,7 +114,6 @@ export function RobotsAndProjectsPreview() {
           title="Robôs e projetos feitos para aprender, competir e evoluir."
         />
         <div className="mt-10 grid gap-5 lg:grid-cols-2">
-          <ScrollReveal>
             <article className="glass-panel card-hover relative overflow-hidden rounded-3xl p-6 sm:p-8">
               <div aria-hidden="true" className="absolute -right-12 -top-12 h-48 w-48 rounded-full border border-cyan-200/13" />
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-acrux-cyan-bright">Robôs</p>
@@ -192,8 +127,6 @@ export function RobotsAndProjectsPreview() {
               </div>
               <ArrowLink className="mt-7" href="/robos" variant="secondary">Explorar robôs</ArrowLink>
             </article>
-          </ScrollReveal>
-          <ScrollReveal delay={0.1}>
             <article className="glass-panel card-hover relative overflow-hidden rounded-3xl p-6 sm:p-8">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-acrux-cyan-bright">Projetos</p>
               <h3 className="mt-3 text-3xl font-bold tracking-[-0.045em] text-white">Ideias transformadas em protótipos.</h3>
@@ -207,7 +140,6 @@ export function RobotsAndProjectsPreview() {
               </div>
               <ArrowLink className="mt-7" href="/projetos" variant="secondary">Explorar projetos</ArrowLink>
             </article>
-          </ScrollReveal>
         </div>
       </div>
     </section>
@@ -226,7 +158,6 @@ export function AchievementsAndCompetitionPreview() {
           </p>
           <ArrowLink className="mt-8" href="/temporadas" variant="secondary">Ver temporadas</ArrowLink>
         </div>
-        <ScrollReveal delay={0.1}>
           <div className="relative border-l border-cyan-200/22 pl-7 sm:pl-9">
             {["Conquista ou reconhecimento", "Participação em competição", "Próxima etapa da trajetória"].map((item, index) => (
               <div className="relative pb-8 last:pb-0" key={item}>
@@ -237,7 +168,6 @@ export function AchievementsAndCompetitionPreview() {
               </div>
             ))}
           </div>
-        </ScrollReveal>
       </div>
 
       <div className="shell mt-15">
@@ -276,7 +206,6 @@ export function ClosingCta() {
   return (
     <section className="section">
       <div className="shell">
-        <ScrollReveal>
           <div className="relative overflow-hidden rounded-3xl border border-cyan-200/18 bg-[linear-gradient(135deg,#09285b_0%,#06163f_46%,#020817_100%)] px-6 py-12 text-center shadow-[0_1.5rem_5rem_rgba(1,14,43,0.45)] sm:px-12 sm:py-16">
             <div aria-hidden="true" className="absolute left-1/2 top-1/2 h-95 w-95 -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-200/10" />
             <div aria-hidden="true" className="absolute left-[18%] top-[26%] h-1.5 w-1.5 rounded-full bg-acrux-yellow shadow-[0_0_0.8rem_rgba(251,244,6,0.8)]" />
@@ -291,9 +220,7 @@ export function ClosingCta() {
               </div>
             </div>
           </div>
-        </ScrollReveal>
       </div>
     </section>
   );
 }
-
