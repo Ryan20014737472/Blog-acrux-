@@ -60,8 +60,8 @@ export function TeamIndex() {
 
         {!isLoading && !loadError && members.length ? <section aria-label="Integrantes da equipe" className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{members.map((member, index) => {
           const photoUrl = browserClient ? getPublicImageUrl(browserClient, "avatars", member.photo_path) : null;
-          return <motion.article className="glass-panel card-hover overflow-hidden rounded-2xl" initial={reduceMotion ? false : { opacity: 0, y: 14 }} key={member.id} transition={{ delay: reduceMotion ? 0 : index * 0.05, duration: 0.35 }} whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }}>
-            {photoUrl ? <img alt={`Retrato de ${member.name}`} className="h-56 w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105" src={photoUrl} /> : <PlaceholderMedia className="min-h-56 border-x-0 border-t-0" label={`Foto de ${member.name} pendente`} />}
+          return <motion.article className="glass-panel card-hover group overflow-hidden rounded-2xl" initial={reduceMotion ? false : { opacity: 0, y: 14 }} key={member.id} transition={{ delay: reduceMotion ? 0 : index * 0.05, duration: 0.35 }} whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }}>
+            {photoUrl ? <img alt={`Retrato de ${member.name}`} className="block aspect-[4/5] w-full object-cover object-[center_25%] transition-transform duration-500 motion-safe:group-hover:scale-105" decoding="async" loading="lazy" src={photoUrl} /> : <PlaceholderMedia className="aspect-[4/5] w-full border-x-0 border-t-0" label={`Foto de ${member.name} pendente`} />}
             <div className="p-5"><p className="text-xs font-bold uppercase tracking-[0.15em] text-acrux-cyan-bright">{member.area ?? "ACRUX"}</p><h2 className="mt-3 text-xl font-bold text-white">{member.name}</h2>{member.role_title ? <p className="mt-2 text-sm font-bold text-white/78">{member.role_title}</p> : null}{member.short_bio ? <p className="mt-3 text-sm leading-6 text-acrux-muted">{member.short_bio}</p> : null}</div>
           </motion.article>;
         })}</section> : null}
@@ -72,3 +72,4 @@ export function TeamIndex() {
     </main>
   );
 }
+
