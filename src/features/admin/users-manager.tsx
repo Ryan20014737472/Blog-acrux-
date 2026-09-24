@@ -127,8 +127,8 @@ export function UsersManager({ session }: { session: AdminSession }) {
       <h2 id="invite-title" className="text-xl font-bold">Convidar usuário</h2>
       <p className="mt-2 text-sm leading-6 text-acrux-muted">Editor: acesso limitado de edição. Administrador: gestão completa, inclusive de usuários. Sem acesso: apenas navegação pública.</p>
       <form onSubmit={invite} className="mt-5 grid gap-4 md:grid-cols-[1fr_220px_auto] md:items-end">
-        <label className="grid gap-2 text-sm font-bold">E-mail<input className={userField} type="email" autoComplete="email" required maxLength={254} value={email} disabled={busy || loading} onChange={(event) => setEmail(event.target.value)} /></label>
-        <label className="grid gap-2 text-sm font-bold">Acesso<select className={userField} value={inviteRole} disabled={busy || loading} onChange={(event) => setInviteRole(event.target.value)}><option value="editor">Editor</option><option value="admin">Administrador</option></select></label>
+        <label className="grid gap-2 text-sm font-bold">E-mail<input className={userField} name="inviteEmail" type="email" autoComplete="email" spellCheck={false} required maxLength={254} value={email} disabled={busy || loading} onChange={(event) => setEmail(event.target.value)} /></label>
+        <label className="grid gap-2 text-sm font-bold">Acesso<select className={userField} name="inviteRole" value={inviteRole} disabled={busy || loading} onChange={(event) => setInviteRole(event.target.value)}><option value="editor">Editor</option><option value="admin">Administrador</option></select></label>
         <button type="submit" className="button-primary" disabled={busy || loading || !result}>{busy ? "Processando…" : "Enviar convite"}</button>
       </form>
     </section>
@@ -139,8 +139,8 @@ export function UsersManager({ session }: { session: AdminSession }) {
     <section className="mt-8" aria-labelledby="users-title" aria-busy={loading || busy}>
       <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="users-title" className="text-2xl font-bold">Contas cadastradas</h2><button className="button-secondary" disabled={busy || loading} onClick={() => afterDiscard(() => { setError(""); void load(); })}>Atualizar lista</button></div>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <label className="grid gap-2 text-sm font-bold">Buscar nesta página<input type="search" className={userField} value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nome ou e-mail" /></label>
-        <label className="grid gap-2 text-sm font-bold">Filtrar por acesso<select className={userField} value={filter} onChange={(event) => setFilter(event.target.value)}><option value="">Todos</option>{Object.entries(roleLabels).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
+        <label className="grid gap-2 text-sm font-bold">Buscar nesta página<input type="search" className={userField} name="userSearch" autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nome ou e-mail…" /></label>
+        <label className="grid gap-2 text-sm font-bold">Filtrar por acesso<select className={userField} name="roleFilter" value={filter} onChange={(event) => setFilter(event.target.value)}><option value="">Todos</option>{Object.entries(roleLabels).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
       </div>
       {loading ? <p className="py-8 text-acrux-muted">Carregando usuários…</p> : <div className="mt-5 grid gap-5 lg:grid-cols-2">
         {result?.users.map((user) => <article hidden={!rows.some((row) => row.id === user.id)} key={`${user.id}:${user.updatedAt}:${listRevision}`} className="glass-panel min-w-0 rounded-2xl p-5">

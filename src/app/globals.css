@@ -21,6 +21,8 @@
   --acrux-muted: #a9c3e6;
   --acrux-white: #fdfdfd;
   --acrux-yellow: #fbf406;
+  --acrux-danger: #8d2440;
+  --acrux-danger-hover: #a62c4a;
   --acrux-border: rgb(169 195 230 / 16%);
   --acrux-border-strong: rgb(75 212 232 / 32%);
   --acrux-panel: rgb(5 19 54 / 72%);
@@ -34,6 +36,7 @@
 
 html {
   background: var(--acrux-navy);
+  color-scheme: dark;
   scroll-behavior: smooth;
 }
 
@@ -58,6 +61,10 @@ a,
 button,
 input {
   -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  touch-action: manipulation;
 }
 
 a:focus-visible,
@@ -214,7 +221,7 @@ textarea:focus-visible {
   box-shadow: 0 0.75rem 2rem rgb(7 155 185 / 26%);
 }
 
-.button-primary:hover {
+.button-primary:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 1rem 2.3rem rgb(7 155 185 / 38%);
 }
@@ -225,10 +232,18 @@ textarea:focus-visible {
   color: var(--acrux-white);
 }
 
-.button-secondary:hover {
+.button-secondary:hover:not(:disabled) {
   border-color: var(--acrux-border-strong);
   background: rgb(9 59 120 / 32%);
   transform: translateY(-2px);
+}
+
+.button-primary:disabled,
+.button-secondary:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  box-shadow: none;
+  transform: none;
 }
 
 .admin-input {
@@ -372,3 +387,4 @@ textarea:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
