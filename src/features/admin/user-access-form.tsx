@@ -11,9 +11,9 @@ export function UserAccessForm({ user, busy, canRemove, onSave, onRecover, onRem
   user: ManagedUser;
   busy: boolean;
   canRemove: boolean;
-  onSave: (role: UserRole, displayName: string) => Promise<void>;
-  onRecover: () => Promise<void>;
-  onRemove: () => Promise<void>;
+  onSave: (role: UserRole, displayName: string) => void | Promise<void>;
+  onRecover: () => void | Promise<void>;
+  onRemove: () => void | Promise<void>;
   onDirty: (id: string, dirty: boolean) => void;
 }) {
   const [name, setName] = useState(user.displayName);
@@ -22,7 +22,6 @@ export function UserAccessForm({ user, busy, canRemove, onSave, onRecover, onRem
   useEffect(() => { onDirty(user.id, dirty); return () => onDirty(user.id, false); }, [dirty, user.id, onDirty]);
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (role !== user.role && !window.confirm(`Alterar o acesso de ${user.email} para ${roleLabels[role]}?${role === "admin" ? " Essa pessoa poderá gerenciar usuários e todo o conteúdo." : ""}`)) return;
     await onSave(role, name);
   }
   return <form onSubmit={submit} className="mt-5 grid gap-4">
@@ -33,8 +32,8 @@ export function UserAccessForm({ user, busy, canRemove, onSave, onRecover, onRem
     {user.role === "admin" && <p className="text-xs leading-5 text-acrux-muted">Administradores estão protegidos contra rebaixamento neste painel. Uma remoção deve ser feita no Supabase, mantendo outro administrador ativo.</p>}
     <div className="flex flex-wrap gap-3">
       <button className="button-primary" disabled={busy || !dirty || !user.updatedAt} type="submit">Salvar alterações</button>
-      <button className="button-secondary" disabled={busy || user.role === "visitor" || dirty} type="button" onClick={() => { if (window.confirm(`Enviar um novo link para definir senha a ${user.email}?`)) void onRecover(); }}>Enviar link de senha</button>
-      {canRemove && <button className="min-h-12 rounded-xl border border-red-300/40 px-4 py-2 text-sm font-bold text-red-100 transition hover:bg-red-300/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300 disabled:opacity-50" disabled={busy || dirty} type="button" onClick={() => { if (window.prompt(`Remover definitivamente ${user.email}? Convites e sessões anteriores deixarão de funcionar. Para confirmar, digite o e-mail completo:`, "") === user.email) void onRemove(); }}>Remover usuário</button>}
+      <button className="button-secondary" disabled={busy || user.role === "visitor" || dirty} type="button" onClick={() => void onRecover()}>Enviar link de senha</button>
+      {canRemove && <button className="min-h-12 rounded-xl border border-red-300/40 px-4 py-2 text-sm font-bold text-red-100 transition hover:bg-red-300/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300 disabled:opacity-50" disabled={busy || dirty} type="button" onClick={() => void onRemove()}>Remover usuário</button>}
     </div>
     {!user.updatedAt && <p className="text-sm text-amber-100">Esta conta está sem perfil. Revise a criação do perfil no Supabase.</p>}
     {dirty && <p className="text-xs text-acrux-muted">Alterações ainda não salvas. Salve antes de atualizar ou mudar de página.</p>}
