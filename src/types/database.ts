@@ -34,7 +34,13 @@ export interface Database {
         Row: { id: string; profile_id: string | null; slug: string; name: string; area: string | null; role_title: string | null; short_bio: string | null; photo_path: string | null; display_order: number; is_published: boolean; is_home_featured: boolean; created_at: string; updated_at: string };
         Insert: { id?: string; profile_id?: string | null; slug: string; name: string; area?: string | null; role_title?: string | null; short_bio?: string | null; photo_path?: string | null; display_order?: number; is_published?: boolean; is_home_featured?: boolean };
         Update: { profile_id?: string | null; slug?: string; name?: string; area?: string | null; role_title?: string | null; short_bio?: string | null; photo_path?: string | null; display_order?: number; is_published?: boolean; is_home_featured?: boolean };
-        Relationships: EmptyRelationships;
+        Relationships: [{
+          foreignKeyName: "team_members_area_fkey";
+          columns: ["area"];
+          isOneToOne: false;
+          referencedRelation: "team_areas";
+          referencedColumns: ["name"];
+        }];
       };
       team_areas: {
         Row: { name: string; display_order: number; created_at: string };

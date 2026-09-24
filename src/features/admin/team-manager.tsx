@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
 import type { AdminSession } from "@/components/admin/admin-gate";
+import { ConfirmationDialog, type ConfirmationRequest } from "@/components/admin/confirmation-dialog";
 import { slugify } from "@/lib/content/slug";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getPublicImageUrl, uploadPublicImage } from "@/lib/supabase/storage";
@@ -75,6 +76,7 @@ export function TeamManager({ session }: TeamManagerProps) {
   const [isSavingAreas, setIsSavingAreas] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<ConfirmationRequest | null>(null);
 
   const canManage = session.role === "admin";
   const homeFeaturedCount = members.filter((member) => member.is_home_featured).length;
@@ -157,6 +159,51 @@ export function TeamManager({ session }: TeamManagerProps) {
     setNewArea("");
     setFeedback("Área adicionada. Agora você pode selecioná-la no perfil de um integrante.");
     await loadMembers();
+  }
+
+  function askDeleteArea(name: string) {
+    if (!canManage || members.some((member) => member.area === name)) return;
+    const unsavedOrder = areas.some((area) => areaOrders[area.name] !== String(area.display_order));
+    setConfirmation({
+      title: `Excluir a área ${name}?`,
+      description: `A área será removida da lista de classificação. Nenhum integrante será excluído.${unsavedOrder ? " Alterações de ordem ainda não salvas serão descartadas." : ""}`,
+      confirmLabel: "Excluir área",
+      tone: "danger",
+      onConfirm: async () => {
+        const supabase = createSupabaseBrowserClient();
+        if (!supabase) return;
+        setError(null);
+        setFeedback(null);
+        setIsSavingAreas(true);
+        try {
+          const { error: deleteError, count } = await supabase.from("team_areas").delete({ count: "exact" }).eq("name", name);
+          if (deleteError) {
+            setError(deleteError.code === "23503" ? `A área ${name} possui integrantes. Mova-os para outra área antes de excluí-la.` : "Não foi possível excluir a área.");
+            return;
+          }
+          if (count !== 1) {
+            setError("A área não foi encontrada. Atualize a página e tente novamente.");
+            return;
+          }
+          setDraft((current) => current.area === name ? { ...current, area: "" } : current);
+          setFeedback(`Área ${name} excluída.`);
+          await loadMembers();
+        } finally {
+          setIsSavingAreas(false);
+        }
+      },
+    });
+  }
+
+  async function confirmAreaAction() {
+    if (!confirmation || isSavingAreas) return;
+    try {
+      await confirmation.onConfirm();
+    } catch {
+      setError("Não foi possível excluir a área. Tente novamente.");
+    } finally {
+      setConfirmation(null);
+    }
   }
 
   useEffect(() => {
@@ -272,8 +319,14 @@ export function TeamManager({ session }: TeamManagerProps) {
       {error ? <p className="mt-6 rounded-2xl border border-red-300/22 bg-red-950/24 px-4 py-3 text-sm text-red-100" role="alert">{error}</p> : null}
       {feedback ? <p className="mt-6 rounded-2xl border border-cyan-200/18 bg-cyan-300/8 px-4 py-3 text-sm text-acrux-cyan-bright" role="status">{feedback}</p> : null}
       {canManage ? <form className="glass-panel mt-10 rounded-3xl p-5 sm:p-7" onSubmit={saveAreaOrders}>
-        <div><h2 className="text-lg font-bold text-white">Ordem das áreas</h2><p className="mt-1 text-sm leading-6 text-acrux-muted">As áreas aparecem como seções na página da equipe. Números menores aparecem primeiro.</p></div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{areas.map((area) => <label className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#020817]/35 px-4 py-3 text-sm font-bold text-white" key={area.name}>{area.name}<input aria-label={`Ordem da área ${area.name}`} className="admin-input w-20 text-center" inputMode="numeric" min="0" onChange={(event) => setAreaOrders((current) => ({ ...current, [area.name]: event.target.value }))} type="number" value={areaOrders[area.name] ?? "0"} /></label>)}</div>
+        <div><h2 className="text-lg font-bold text-white">Ordem das áreas</h2><p className="mt-1 text-sm leading-6 text-acrux-muted">As áreas aparecem como seções na página da equipe. Números menores aparecem primeiro. Para excluir uma área em uso, mova seus integrantes para outra área antes.</p></div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{areas.map((area) => {
+          const memberCount = members.filter((member) => member.area === area.name).length;
+          return <div className="rounded-xl border border-white/10 bg-[#020817]/35 px-4 py-3" key={area.name}>
+            <label className="flex items-center justify-between gap-3 text-sm font-bold text-white">{area.name}<input aria-label={`Ordem da área ${area.name}`} className="admin-input w-20 text-center" inputMode="numeric" min="0" onChange={(event) => setAreaOrders((current) => ({ ...current, [area.name]: event.target.value }))} type="number" value={areaOrders[area.name] ?? "0"} /></label>
+            <div className="mt-2 flex items-center justify-between gap-3 border-t border-white/8 pt-2 text-xs text-acrux-muted"><span>{memberCount ? `${memberCount} ${memberCount === 1 ? "integrante vinculado" : "integrantes vinculados"}` : "Área vazia"}</span><button aria-label={`Excluir área ${area.name}`} className="rounded-lg px-2 py-1 font-bold text-red-100 transition-colors enabled:hover:bg-red-300/10 disabled:cursor-not-allowed disabled:opacity-45" disabled={isSavingAreas || isLoading || memberCount > 0} onClick={() => askDeleteArea(area.name)} title={memberCount ? "Mova os integrantes para outra área antes de excluir" : `Excluir área ${area.name}`} type="button">Excluir</button></div>
+          </div>;
+        })}</div>
         <div className="mt-5 flex flex-wrap items-end gap-3"><button className="button-secondary min-h-10 px-4" disabled={isSavingAreas || areas.length === 0} type="submit">{isSavingAreas ? "Salvando…" : "Salvar ordem das áreas"}</button><label className="grid gap-1.5 text-sm font-bold text-white">Nova área<input className="admin-input min-w-40" maxLength={60} onChange={(event) => setNewArea(event.target.value)} placeholder="Ex.: Engenharia" value={newArea} /></label><button className="button-secondary min-h-10 px-4" disabled={isSavingAreas || !newArea.trim()} onClick={addArea} type="button">Adicionar área</button></div>
       </form> : null}
       <div className="mt-6 grid gap-6 xl:grid-cols-[0.78fr_1.22fr]">
@@ -307,6 +360,7 @@ export function TeamManager({ session }: TeamManagerProps) {
           <button className="button-primary mt-7" disabled={isSaving || isUploading} type="submit">{isSaving ? "Salvando…" : draft.id ? "Salvar alterações" : "Cadastrar integrante"}</button>
         </form> : <div className="glass-panel rounded-3xl p-6 sm:p-8"><p className="text-lg font-bold text-white">Acesso de leitura</p><p className="mt-3 max-w-xl text-base leading-7 text-acrux-muted">Sua conta pode consultar a equipe, mas alterações de integrantes exigem uma conta administradora.</p></div>}
       </div>
+      <ConfirmationDialog busy={isSavingAreas} onCancel={() => setConfirmation(null)} onConfirm={() => void confirmAreaAction()} request={confirmation} />
     </AdminWorkspace>
   );
 }
