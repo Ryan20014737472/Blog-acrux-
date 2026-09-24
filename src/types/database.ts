@@ -36,6 +36,12 @@ export interface Database {
         Update: { profile_id?: string | null; slug?: string; name?: string; area?: string | null; role_title?: string | null; short_bio?: string | null; photo_path?: string | null; display_order?: number; is_published?: boolean; is_home_featured?: boolean };
         Relationships: EmptyRelationships;
       };
+      team_areas: {
+        Row: { name: string; display_order: number; created_at: string };
+        Insert: { name: string; display_order?: number };
+        Update: { name?: string; display_order?: number };
+        Relationships: EmptyRelationships;
+      };
       categories: {
         Row: { id: string; slug: string; name: string; description: string | null; created_at: string };
         Insert: { id?: string; slug: string; name: string; description?: string | null };

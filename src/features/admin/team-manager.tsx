@@ -11,8 +11,7 @@ import { getPublicImageUrl, uploadPublicImage } from "@/lib/supabase/storage";
 import type { Database } from "@/types/database";
 
 type TeamMemberRow = Database["public"]["Tables"]["team_members"]["Row"];
-
-const teamAreas = ["CAD", "Programação", "Mecânica", "Elétrica", "Gestão", "Marketing", "Impacto STEAM"] as const;
+type TeamAreaRow = Database["public"]["Tables"]["team_areas"]["Row"];
 
 interface TeamDraft {
   area: string;
@@ -66,10 +65,14 @@ interface TeamManagerProps {
 
 export function TeamManager({ session }: TeamManagerProps) {
   const [members, setMembers] = useState<TeamMemberRow[]>([]);
+  const [areas, setAreas] = useState<TeamAreaRow[]>([]);
+  const [areaOrders, setAreaOrders] = useState<Record<string, string>>({});
+  const [newArea, setNewArea] = useState("");
   const [draft, setDraft] = useState<TeamDraft>(emptyDraft);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSavingAreas, setIsSavingAreas] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -88,20 +91,73 @@ export function TeamManager({ session }: TeamManagerProps) {
     }
 
     setIsLoading(true);
-    const { data, error: loadError } = await supabase
-      .from("team_members")
-      .select("*")
-      .order("display_order")
-      .order("name");
+    const [{ data, error: loadError }, { data: areaData, error: areaError }] = await Promise.all([
+      supabase.from("team_members").select("*").order("display_order").order("name"),
+      supabase.from("team_areas").select("*").order("display_order").order("name"),
+    ]);
 
     if (loadError) {
       setError("Não foi possível carregar os integrantes.");
     } else {
       setMembers(data ?? []);
     }
+    if (areaError) {
+      setError("Não foi possível carregar as áreas da equipe.");
+    } else {
+      setAreas(areaData ?? []);
+      setAreaOrders(Object.fromEntries((areaData ?? []).map((area) => [area.name, String(area.display_order)])));
+    }
 
     setIsLoading(false);
   }, []);
+
+  async function saveAreaOrders(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!canManage) return;
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) return;
+    setError(null);
+    setFeedback(null);
+    setIsSavingAreas(true);
+    const { error: saveError } = await supabase.from("team_areas").upsert(
+      areas.map((area) => ({ name: area.name, display_order: getNumber(areaOrders[area.name] ?? "0") })),
+      { onConflict: "name" },
+    );
+    setIsSavingAreas(false);
+    if (saveError) {
+      setError("Não foi possível salvar a ordem das áreas.");
+      return;
+    }
+    setFeedback("Ordem das áreas atualizada.");
+    await loadMembers();
+  }
+
+  async function addArea() {
+    if (!canManage) return;
+    const name = newArea.trim();
+    if (!name) return;
+    if (areas.some((area) => area.name.toLocaleLowerCase("pt-BR") === name.toLocaleLowerCase("pt-BR"))) {
+      setError("Essa área já está cadastrada.");
+      return;
+    }
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) return;
+    setError(null);
+    setFeedback(null);
+    setIsSavingAreas(true);
+    const { error: addError } = await supabase.from("team_areas").insert({
+      name,
+      display_order: Math.max(0, ...areas.map((area) => area.display_order)) + 1,
+    });
+    setIsSavingAreas(false);
+    if (addError) {
+      setError("Não foi possível adicionar a área.");
+      return;
+    }
+    setNewArea("");
+    setFeedback("Área adicionada. Agora você pode selecioná-la no perfil de um integrante.");
+    await loadMembers();
+  }
 
   useEffect(() => {
     void loadMembers();
@@ -208,12 +264,19 @@ export function TeamManager({ session }: TeamManagerProps) {
 
   return (
     <AdminWorkspace
-      description="Cadastre os perfis oficiais da equipe com área, função, apresentação e foto. Apenas administradores podem alterar estes registros."
+      description="Cadastre os perfis e organize as áreas da equipe. Apenas administradores podem alterar estes registros."
       section="equipe"
       session={session}
       title="Gerenciar equipe"
     >
-      <div className="mt-10 grid gap-6 xl:grid-cols-[0.78fr_1.22fr]">
+      {error ? <p className="mt-6 rounded-2xl border border-red-300/22 bg-red-950/24 px-4 py-3 text-sm text-red-100" role="alert">{error}</p> : null}
+      {feedback ? <p className="mt-6 rounded-2xl border border-cyan-200/18 bg-cyan-300/8 px-4 py-3 text-sm text-acrux-cyan-bright" role="status">{feedback}</p> : null}
+      {canManage ? <form className="glass-panel mt-10 rounded-3xl p-5 sm:p-7" onSubmit={saveAreaOrders}>
+        <div><h2 className="text-lg font-bold text-white">Ordem das áreas</h2><p className="mt-1 text-sm leading-6 text-acrux-muted">As áreas aparecem como seções na página da equipe. Números menores aparecem primeiro.</p></div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{areas.map((area) => <label className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#020817]/35 px-4 py-3 text-sm font-bold text-white" key={area.name}>{area.name}<input aria-label={`Ordem da área ${area.name}`} className="admin-input w-20 text-center" inputMode="numeric" min="0" onChange={(event) => setAreaOrders((current) => ({ ...current, [area.name]: event.target.value }))} type="number" value={areaOrders[area.name] ?? "0"} /></label>)}</div>
+        <div className="mt-5 flex flex-wrap items-end gap-3"><button className="button-secondary min-h-10 px-4" disabled={isSavingAreas || areas.length === 0} type="submit">{isSavingAreas ? "Salvando…" : "Salvar ordem das áreas"}</button><label className="grid gap-1.5 text-sm font-bold text-white">Nova área<input className="admin-input min-w-40" maxLength={60} onChange={(event) => setNewArea(event.target.value)} placeholder="Ex.: Engenharia" value={newArea} /></label><button className="button-secondary min-h-10 px-4" disabled={isSavingAreas || !newArea.trim()} onClick={addArea} type="button">Adicionar área</button></div>
+      </form> : null}
+      <div className="mt-6 grid gap-6 xl:grid-cols-[0.78fr_1.22fr]">
         <aside className="glass-panel h-fit rounded-3xl p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3">
             <div><p className="text-lg font-bold text-white">Integrantes</p><p className="mt-1 text-sm text-acrux-muted">{members.length} registro(s)</p></div>
@@ -236,12 +299,11 @@ export function TeamManager({ session }: TeamManagerProps) {
           <div className="mt-7 grid gap-5">
             <label className="grid gap-2 text-sm font-bold text-white" htmlFor="member-name">Nome<input className="admin-input" id="member-name" onChange={(event) => updateName(event.target.value)} required value={draft.name} /></label>
             <label className="grid gap-2 text-sm font-bold text-white" htmlFor="member-slug">Endereço do perfil<input className="admin-input" id="member-slug" onChange={(event) => setDraft((current) => ({ ...current, slug: slugify(event.target.value) }))} required value={draft.slug} /></label>
-            <div className="grid gap-5 sm:grid-cols-2"><label className="grid gap-2 text-sm font-bold text-white" htmlFor="member-area">Área<select className="admin-input" id="member-area" onChange={(event) => setDraft((current) => ({ ...current, area: event.target.value }))} value={draft.area}><option value="">Selecionar área</option>{teamAreas.map((area) => <option key={area} value={area}>{area}</option>)}</select></label><label className="grid gap-2 text-sm font-bold text-white" htmlFor="member-role">Função<input className="admin-input" id="member-role" onChange={(event) => setDraft((current) => ({ ...current, roleTitle: event.target.value }))} value={draft.roleTitle} /></label></div>
+            <div className="grid gap-5 sm:grid-cols-2"><label className="grid gap-2 text-sm font-bold text-white" htmlFor="member-area">Área<select className="admin-input" id="member-area" onChange={(event) => setDraft((current) => ({ ...current, area: event.target.value }))} value={draft.area}><option value="">Selecionar área</option>{draft.area && !areas.some((area) => area.name === draft.area) ? <option value={draft.area}>{draft.area}</option> : null}{areas.map((area) => <option key={area.name} value={area.name}>{area.name}</option>)}</select></label><label className="grid gap-2 text-sm font-bold text-white" htmlFor="member-role">Função<input className="admin-input" id="member-role" onChange={(event) => setDraft((current) => ({ ...current, roleTitle: event.target.value }))} value={draft.roleTitle} /></label></div>
             <label className="grid gap-2 text-sm font-bold text-white" htmlFor="member-bio">Descrição curta<textarea className="admin-input min-h-30 resize-y" id="member-bio" maxLength={500} onChange={(event) => setDraft((current) => ({ ...current, shortBio: event.target.value }))} value={draft.shortBio} /></label>
             <div className="grid gap-3"><label className="grid gap-2 text-sm font-bold text-white" htmlFor="member-photo">Foto<input accept="image/avif,image/gif,image/jpeg,image/png,image/webp" className="admin-file-input" disabled={isUploading} id="member-photo" onChange={uploadPhoto} type="file" /></label>{photoUrl ? <img alt={`Prévia de ${draft.name || "integrante"}`} className="max-h-80 w-full rounded-2xl border border-white/10 object-cover" src={photoUrl} /> : <p className="text-sm text-acrux-muted">Nenhuma foto enviada.</p>}</div>
-            <div className="grid gap-4 sm:grid-cols-[1fr_auto]"><label className="grid gap-2 text-sm font-bold text-white" htmlFor="member-order">Ordem de exibição<input className="admin-input" id="member-order" inputMode="numeric" min="0" onChange={(event) => setDraft((current) => ({ ...current, displayOrder: event.target.value }))} type="number" value={draft.displayOrder} /></label><div className="grid gap-3"><label className="flex min-h-12 items-center gap-3 rounded-xl border border-white/12 bg-[#020817]/45 px-4 text-sm font-bold text-white"><input checked={draft.isPublished} onChange={(event) => setDraft((current) => ({ ...current, isPublished: event.target.checked }))} type="checkbox" />Publicar perfil</label><label className={`flex min-h-12 items-center gap-3 rounded-xl border px-4 text-sm font-bold ${homeSlotAvailable ? "border-cyan-200/15 bg-cyan-300/5 text-white" : "border-white/8 bg-white/3 text-acrux-muted"}`}><input checked={draft.isHomeFeatured} disabled={!homeSlotAvailable} onChange={(event) => setDraft((current) => ({ ...current, isHomeFeatured: event.target.checked, isPublished: event.target.checked ? true : current.isPublished }))} type="checkbox" />Exibir na Home ({homeFeaturedCount}/3)</label>{!homeSlotAvailable ? <p className="text-xs leading-5 text-acrux-muted">Limite atingido. Remova outro destaque para liberar esta vaga.</p> : null}</div></div>
+            <div className="grid gap-4 sm:grid-cols-[1fr_auto]"><label className="grid gap-2 text-sm font-bold text-white" htmlFor="member-order">Ordem dentro da área<input className="admin-input" id="member-order" inputMode="numeric" min="0" onChange={(event) => setDraft((current) => ({ ...current, displayOrder: event.target.value }))} type="number" value={draft.displayOrder} /><span className="text-xs font-normal text-acrux-muted">A ordem das áreas é definida no painel acima.</span></label><div className="grid gap-3"><label className="flex min-h-12 items-center gap-3 rounded-xl border border-white/12 bg-[#020817]/45 px-4 text-sm font-bold text-white"><input checked={draft.isPublished} onChange={(event) => setDraft((current) => ({ ...current, isPublished: event.target.checked }))} type="checkbox" />Publicar perfil</label><label className={`flex min-h-12 items-center gap-3 rounded-xl border px-4 text-sm font-bold ${homeSlotAvailable ? "border-cyan-200/15 bg-cyan-300/5 text-white" : "border-white/8 bg-white/3 text-acrux-muted"}`}><input checked={draft.isHomeFeatured} disabled={!homeSlotAvailable} onChange={(event) => setDraft((current) => ({ ...current, isHomeFeatured: event.target.checked, isPublished: event.target.checked ? true : current.isPublished }))} type="checkbox" />Exibir na Home ({homeFeaturedCount}/3)</label>{!homeSlotAvailable ? <p className="text-xs leading-5 text-acrux-muted">Limite atingido. Remova outro destaque para liberar esta vaga.</p> : null}</div></div>
           </div>
-          {error ? <p className="mt-6 rounded-2xl border border-red-300/22 bg-red-950/24 px-4 py-3 text-sm text-red-100" role="alert">{error}</p> : null}{feedback ? <p className="mt-6 rounded-2xl border border-cyan-200/18 bg-cyan-300/8 px-4 py-3 text-sm text-acrux-cyan-bright" role="status">{feedback}</p> : null}
           <button className="button-primary mt-7" disabled={isSaving || isUploading} type="submit">{isSaving ? "Salvando…" : draft.id ? "Salvar alterações" : "Cadastrar integrante"}</button>
         </form> : <div className="glass-panel rounded-3xl p-6 sm:p-8"><p className="text-lg font-bold text-white">Acesso de leitura</p><p className="mt-3 max-w-xl text-base leading-7 text-acrux-muted">Sua conta pode consultar a equipe, mas alterações de integrantes exigem uma conta administradora.</p></div>}
       </div>
