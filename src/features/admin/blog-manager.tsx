@@ -4,6 +4,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useCallback, useEffect, useState } from "react";
 
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
+import { useAdminConfirm } from "@/components/admin/admin-confirmation-provider";
 import type { AdminSession } from "@/components/admin/admin-gate";
 import { parseTags, slugify } from "@/lib/content/slug";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -82,6 +83,7 @@ interface BlogManagerProps {
 }
 
 export function BlogManager({ session }: BlogManagerProps) {
+  const confirm = useAdminConfirm();
   const [posts, setPosts] = useState<ManagedPost[]>([]);
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [draft, setDraft] = useState<PostDraft>(emptyDraft);
@@ -304,7 +306,7 @@ export function BlogManager({ session }: BlogManagerProps) {
 
   async function deletePost() {
     if (!draft.id || session.role !== "admin") return;
-    if (!window.confirm("Excluir esta postagem? Esta ação não pode ser desfeita.")) return;
+    if (!await confirm({ title: "Excluir postagem?", description: `“${draft.title}” será removida definitivamente. A imagem enviada continuará no acervo de mídia.`, confirmLabel: "Excluir postagem", tone: "danger" })) return;
 
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;

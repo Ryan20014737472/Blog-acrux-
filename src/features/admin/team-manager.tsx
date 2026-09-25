@@ -196,7 +196,7 @@ export function TeamManager({ session }: TeamManagerProps) {
   }
 
   async function confirmAreaAction() {
-    if (!confirmation || isSavingAreas) return;
+    if (!confirmation || isSavingAreas || isSaving) return;
     try {
       await confirmation.onConfirm();
     } catch {
@@ -288,25 +288,33 @@ export function TeamManager({ session }: TeamManagerProps) {
     await loadMembers();
   }
 
-  async function deleteMember() {
+  function deleteMember() {
     if (!draft.id || !canManage) return;
-    if (!window.confirm("Excluir este integrante? Essa ação não pode ser desfeita.")) return;
-
-    const supabase = createSupabaseBrowserClient();
-    if (!supabase) return;
-
-    setIsSaving(true);
-    const { error: deleteError } = await supabase.from("team_members").delete().eq("id", draft.id);
-    setIsSaving(false);
-
-    if (deleteError) {
-      setError("Não foi possível excluir o integrante.");
-      return;
-    }
-
-    setDraft(emptyDraft);
-    setFeedback("Perfil excluído. A foto enviada permanece guardada no acervo de mídia.");
-    await loadMembers();
+    const memberId = draft.id;
+    setConfirmation({
+      title: "Excluir integrante?",
+      description: `O perfil de ${draft.name} será excluído definitivamente. A foto enviada continuará no acervo de mídia.`,
+      confirmLabel: "Excluir integrante",
+      tone: "danger",
+      onConfirm: async () => {
+        const supabase = createSupabaseBrowserClient();
+        if (!supabase) return;
+        setError(null);
+        setIsSaving(true);
+        try {
+          const { error: deleteError } = await supabase.from("team_members").delete().eq("id", memberId);
+          if (deleteError) {
+            setError("Não foi possível excluir o integrante.");
+            return;
+          }
+          setDraft(emptyDraft);
+          setFeedback("Perfil excluído. A foto enviada permanece guardada no acervo de mídia.");
+          await loadMembers();
+        } finally {
+          setIsSaving(false);
+        }
+      },
+    });
   }
 
   return (
@@ -360,8 +368,7 @@ export function TeamManager({ session }: TeamManagerProps) {
           <button className="button-primary mt-7" disabled={isSaving || isUploading} type="submit">{isSaving ? "Salvando…" : draft.id ? "Salvar alterações" : "Cadastrar integrante"}</button>
         </form> : <div className="glass-panel rounded-3xl p-6 sm:p-8"><p className="text-lg font-bold text-white">Acesso de leitura</p><p className="mt-3 max-w-xl text-base leading-7 text-acrux-muted">Sua conta pode consultar a equipe, mas alterações de integrantes exigem uma conta administradora.</p></div>}
       </div>
-      <ConfirmationDialog busy={isSavingAreas} onCancel={() => setConfirmation(null)} onConfirm={() => void confirmAreaAction()} request={confirmation} />
+      <ConfirmationDialog busy={isSavingAreas || isSaving} onCancel={() => setConfirmation(null)} onConfirm={() => void confirmAreaAction()} request={confirmation} />
     </AdminWorkspace>
   );
 }
-

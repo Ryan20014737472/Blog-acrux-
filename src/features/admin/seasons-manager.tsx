@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import type { AdminSession } from "@/components/admin/admin-gate";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
+import { useAdminConfirm } from "@/components/admin/admin-confirmation-provider";
 import { slugify } from "@/lib/content/slug";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
@@ -18,6 +19,7 @@ function fromRow(row: Season): Draft {
 }
 
 export function SeasonsManager({ session }: { session: AdminSession }) {
+  const confirm = useAdminConfirm();
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [draft, setDraft] = useState<Draft>(blank);
   const [loading, setLoading] = useState(true);
@@ -35,8 +37,8 @@ export function SeasonsManager({ session }: { session: AdminSession }) {
     return () => window.removeEventListener("beforeunload", warn);
   }, [isDirty]);
 
-  function select(next: Draft) {
-    if (isDirty && !window.confirm("Descartar alterações não salvas?")) return;
+  async function select(next: Draft) {
+    if (isDirty && !await confirm({ title: "Descartar alterações?", description: "As alterações não salvas desta temporada serão perdidas.", confirmLabel: "Descartar alterações", tone: "danger" })) return;
     setDraft(next); setError(""); setMessage("");
   }
 
@@ -88,7 +90,7 @@ export function SeasonsManager({ session }: { session: AdminSession }) {
 
   async function remove() {
     if (!draft.id || !canManage || busy) return;
-    if (!window.confirm(`Excluir ${draft.label}? Os conteúdos vinculados perderão a referência à temporada. Essa ação não pode ser desfeita.`)) return;
+    if (!await confirm({ title: `Excluir ${draft.label}?`, description: "Os conteúdos vinculados perderão a referência à temporada. Esta ação não pode ser desfeita.", confirmLabel: "Excluir temporada", tone: "danger" })) return;
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;
     setBusy(true); setError(""); setMessage("");
@@ -120,4 +122,3 @@ export function SeasonsManager({ session }: { session: AdminSession }) {
     </div>
   </AdminWorkspace>;
 }
-

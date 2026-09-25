@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { AdminSession } from "@/components/admin/admin-gate";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
+import { useAdminConfirm } from "@/components/admin/admin-confirmation-provider";
 import { emptyProject, projectToDraft, projectPayload, type ProjectRow, type ProjectDraft } from "@/features/admin/project-form-model";
 import { ProjectForm } from "@/features/admin/project-form";
 import { ProjectRelations } from "@/features/admin/project-relations";
@@ -14,6 +15,7 @@ import { getPublicImageUrl, uploadPublicImage, validateImageFile } from "@/lib/s
 import { slugify } from "@/lib/content/slug";
 
 export function ProjectsManager({ session }: { session: AdminSession }) {
+  const confirm = useAdminConfirm();
   const [rows, setRows] = useState<ProjectRow[]>([]);
   const [seasons, setSeasons] = useState<SeasonOption[]>([]);
   const [selected, setSelected] = useState<ProjectRow | null>(null);
@@ -32,6 +34,7 @@ export function ProjectsManager({ session }: { session: AdminSession }) {
   const [message, setMessage] = useState("");
   const [attempt, setAttempt] = useState(0);
   const mounted = useRef(false);
+  const allowNavigation = useRef(false);
   const lock = useRef(false);
   const canManage = session.role === "admin";
   const busy = saving || relationsBusy;
@@ -70,21 +73,24 @@ export function ProjectsManager({ session }: { session: AdminSession }) {
 
   useEffect(() => {
     if (!dirty) return;
-    const unload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    const unload = (event: BeforeUnloadEvent) => { if (allowNavigation.current) return; event.preventDefault(); event.returnValue = ""; };
     const navigate = (event: MouseEvent) => {
       if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
       const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
       if (!link || link.target === "_blank" || link.hasAttribute("download")) return;
       const url = new URL(link.href);
       if (url.origin !== location.origin || (url.pathname === location.pathname && url.search === location.search)) return;
-      if (!window.confirm("Descartar as alterações não salvas e sair desta página?")) { event.preventDefault(); event.stopPropagation(); }
+      event.preventDefault(); event.stopPropagation();
+      void confirm({ title: "Sair sem salvar?", description: "As alterações deste projeto serão descartadas.", confirmLabel: "Descartar e sair", tone: "danger" }).then((accepted) => {
+        if (accepted) { allowNavigation.current = true; window.location.assign(url.href); }
+      });
     };
     window.addEventListener("beforeunload", unload); document.addEventListener("click", navigate, true);
     return () => { window.removeEventListener("beforeunload", unload); document.removeEventListener("click", navigate, true); };
-  }, [dirty]);
+  }, [dirty, confirm]);
 
-  function select(row: ProjectRow | null) {
-    if (busy || (dirty && !window.confirm("Descartar as alterações não salvas?"))) return;
+  async function select(row: ProjectRow | null) {
+    if (busy || (dirty && !await confirm({ title: "Descartar alterações?", description: "As alterações não salvas deste projeto serão perdidas.", confirmLabel: "Descartar alterações", tone: "danger" }))) return;
     const next = row ? projectToDraft(row) : emptyProject();
     setSelected(row); setDraft(next); setBaseline(JSON.stringify(next)); setFile(null); setError(""); setMessage("");
   }
@@ -132,7 +138,7 @@ export function ProjectsManager({ session }: { session: AdminSession }) {
   }
   async function remove() {
     if (!selected || !canManage || busy || lock.current) return;
-    if (!window.confirm(`Excluir o projeto “${selected.title}”? Os vínculos com integrantes serão removidos. Os integrantes, álbuns e arquivos de imagem serão preservados. Esta exclusão não pode ser desfeita.`)) return;
+    if (!await confirm({ title: `Excluir o projeto “${selected.title}”?`, description: "Os vínculos com integrantes serão removidos. Os integrantes, álbuns e arquivos de imagem serão preservados. Esta exclusão não pode ser desfeita.", confirmLabel: "Excluir projeto", tone: "danger" })) return;
     lock.current = true; setSaving(true); setError(""); setMessage("");
     try {
       const client = createSupabaseBrowserClient();
@@ -170,4 +176,3 @@ export function ProjectsManager({ session }: { session: AdminSession }) {
     </div>
   </AdminWorkspace>;
 }
-

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { AdminGate, type AdminSession } from "@/components/admin/admin-gate";
+import { AdminConfirmationProvider } from "@/components/admin/admin-confirmation-provider";
 import { ArrowLink } from "@/components/ui/arrow-link";
 import { BlogManager } from "@/features/admin/blog-manager";
 import { CompetitionsManager } from "@/features/admin/competitions-manager";
@@ -33,7 +34,7 @@ const copy: Record<string, { title: string; description: string }> = {
 };
 
 export function AdminSection({ section }: AdminSectionProps) {
-  return <AdminGate>{(session) => <AdminSectionContent section={section} session={session} />}</AdminGate>;
+  return <AdminGate>{(session) => <AdminConfirmationProvider><AdminSectionContent section={section} session={session} /></AdminConfirmationProvider>}</AdminGate>;
 }
 
 function AdminSectionContent({ section, session }: AdminSectionProps & { session: AdminSession }) {
@@ -113,4 +114,3 @@ function AdminSectionContent({ section, session }: AdminSectionProps & { session
     </main>
   );
 }
-

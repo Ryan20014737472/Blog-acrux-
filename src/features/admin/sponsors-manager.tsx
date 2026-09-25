@@ -6,6 +6,7 @@ import Image from "next/image";
 
 import type { AdminSession } from "@/components/admin/admin-gate";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
+import { useAdminConfirm } from "@/components/admin/admin-confirmation-provider";
 import { compareSponsors, normalizedSponsorTier, sponsorTiers } from "@/config/sponsor-tiers";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getPublicImageUrl, uploadPublicImage } from "@/lib/supabase/storage";
@@ -20,6 +21,7 @@ function fromRow(row: Sponsor): Draft {
 }
 
 export function SponsorsManager({ session }: { session: AdminSession }) {
+  const confirm = useAdminConfirm();
   const [items, setItems] = useState<Sponsor[]>([]);
   const [draft, setDraft] = useState<Draft>(blank);
   const [loading, setLoading] = useState(true);
@@ -84,7 +86,7 @@ export function SponsorsManager({ session }: { session: AdminSession }) {
   }
 
   async function remove() {
-    if (!draft.id || !canManage || !window.confirm(`Excluir ${draft.name}? Essa ação não pode ser desfeita.`)) return;
+    if (!draft.id || !canManage || !await confirm({ title: `Excluir ${draft.name}?`, description: "Este patrocinador será removido do site. Esta ação não pode ser desfeita.", confirmLabel: "Excluir patrocinador", tone: "danger" })) return;
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;
     setBusy(true); setError(""); setMessage("");
@@ -116,4 +118,3 @@ export function SponsorsManager({ session }: { session: AdminSession }) {
     </div>
   </AdminWorkspace>;
 }
-

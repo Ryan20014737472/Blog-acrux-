@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AdminSession } from "@/components/admin/admin-gate";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
+import { useAdminConfirm } from "@/components/admin/admin-confirmation-provider";
 import { CompetitionForm } from "@/features/admin/competition-form";
 import { CompetitionRelations } from "@/features/admin/competition-relations";
 import { competitionError, competitionToDraft, emptyCompetitionDraft, parseCompetitionDraft, type CompetitionDraft, type CompetitionRow, type SeasonOption } from "@/features/admin/competition-form-model";
@@ -12,6 +13,7 @@ import { slugify } from "@/lib/content/slug";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export function CompetitionsManager({ session }: { session: AdminSession }) {
+  const confirm = useAdminConfirm();
   const [competitions, setCompetitions] = useState<CompetitionRow[]>([]);
   const [seasons, setSeasons] = useState<SeasonOption[]>([]);
   const [draft, setDraft] = useState(emptyCompetitionDraft);
@@ -28,6 +30,7 @@ export function CompetitionsManager({ session }: { session: AdminSession }) {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [timeZone, setTimeZone] = useState("");
   const active = useRef(false);
+  const allowNavigation = useRef(false);
   const mutation = useRef(false);
   const loadSequence = useRef(0);
   const canManage = session.role === "admin";
@@ -72,17 +75,18 @@ export function CompetitionsManager({ session }: { session: AdminSession }) {
 
   useEffect(() => {
     if (!dirty) return;
-    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    const warn = (event: BeforeUnloadEvent) => { if (allowNavigation.current) return; event.preventDefault(); event.returnValue = ""; };
     const warnBeforeNavigation = (event: MouseEvent) => {
       if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
       if (!link || link.target === "_blank" || link.hasAttribute("download")) return;
       const destination = new URL(link.href, window.location.href);
       if (destination.origin !== window.location.origin || (destination.pathname === window.location.pathname && destination.search === window.location.search)) return;
-      if (!window.confirm("Descartar as alterações não salvas e sair desta página?")) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
+      event.preventDefault();
+      event.stopPropagation();
+      void confirm({ title: "Sair sem salvar?", description: "As alterações desta competição serão descartadas.", confirmLabel: "Descartar e sair", tone: "danger" }).then((accepted) => {
+        if (accepted) { allowNavigation.current = true; window.location.assign(destination.href); }
+      });
     };
     window.addEventListener("beforeunload", warn);
     document.addEventListener("click", warnBeforeNavigation, true);
@@ -90,10 +94,10 @@ export function CompetitionsManager({ session }: { session: AdminSession }) {
       window.removeEventListener("beforeunload", warn);
       document.removeEventListener("click", warnBeforeNavigation, true);
     };
-  }, [dirty]);
+  }, [dirty, confirm]);
 
-  function selectCompetition(row: CompetitionRow | null) {
-    if (busy || (dirty && !window.confirm("Descartar as alterações não salvas deste formulário?"))) return;
+  async function selectCompetition(row: CompetitionRow | null) {
+    if (busy || (dirty && !await confirm({ title: "Descartar alterações?", description: "As alterações não salvas desta competição serão perdidas.", confirmLabel: "Descartar alterações", tone: "danger" }))) return;
     const next = row ? competitionToDraft(row) : emptyCompetitionDraft();
     setDraft(next);
     setSavedDraft(JSON.stringify(next));
@@ -139,7 +143,7 @@ export function CompetitionsManager({ session }: { session: AdminSession }) {
 
   async function remove() {
     if (!canManage || !draft.id || busy || mutation.current) return;
-    if (!window.confirm(`Excluir a competição “${draft.eventName}”? Ela sairá do site e os vínculos de participantes serão removidos. As fotos e os integrantes serão preservados. Esta exclusão não pode ser desfeita.`)) return;
+    if (!await confirm({ title: `Excluir a competição “${draft.eventName}”?`, description: "Ela sairá do site e os vínculos de participantes serão removidos. As fotos e os integrantes serão preservados. Esta exclusão não pode ser desfeita.", confirmLabel: "Excluir competição", tone: "danger" })) return;
     mutation.current = true;
     setSaving(true);
     setError(null);
@@ -190,4 +194,3 @@ export function CompetitionsManager({ session }: { session: AdminSession }) {
     </AdminWorkspace>
   );
 }
-

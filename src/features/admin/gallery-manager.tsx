@@ -4,6 +4,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useCallback, useEffect, useState } from "react";
 
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
+import { useAdminConfirm } from "@/components/admin/admin-confirmation-provider";
 import type { AdminSession } from "@/components/admin/admin-gate";
 import { slugify } from "@/lib/content/slug";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -62,6 +63,7 @@ interface ImageEditorProps {
 }
 
 function GalleryImageEditor({ image, isAdmin, onDeleted, onUpdated, publicUrl }: ImageEditorProps) {
+  const confirm = useAdminConfirm();
   const [altText, setAltText] = useState(image.alt_text);
   const [caption, setCaption] = useState(image.caption ?? "");
   const [displayOrder, setDisplayOrder] = useState(String(image.display_order));
@@ -104,7 +106,7 @@ function GalleryImageEditor({ image, isAdmin, onDeleted, onUpdated, publicUrl }:
   }
 
   async function deleteImage() {
-    if (!isAdmin || !window.confirm("Excluir esta imagem da galeria?")) return;
+    if (!isAdmin || !await confirm({ title: "Excluir imagem?", description: "A imagem será removida do álbum e o arquivo será excluído do acervo. Esta ação não pode ser desfeita.", confirmLabel: "Excluir imagem", tone: "danger" })) return;
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;
 
@@ -150,6 +152,7 @@ interface GalleryManagerProps {
 }
 
 export function GalleryManager({ session }: GalleryManagerProps) {
+  const confirm = useAdminConfirm();
   const [galleries, setGalleries] = useState<GalleryRow[]>([]);
   const [images, setImages] = useState<GalleryImageRow[]>([]);
   const [draft, setDraft] = useState<GalleryDraft>(emptyDraft);
@@ -332,7 +335,7 @@ export function GalleryManager({ session }: GalleryManagerProps) {
   }
 
   async function deleteGallery() {
-    if (!draft.id || !isAdmin || !window.confirm("Excluir este álbum e seus registros de imagens?")) return;
+    if (!draft.id || !isAdmin || !await confirm({ title: `Excluir o álbum “${draft.title}”?`, description: "O álbum e seus registros de imagens serão removidos. Esta ação não pode ser desfeita.", confirmLabel: "Excluir álbum", tone: "danger" })) return;
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;
 
@@ -388,4 +391,3 @@ export function GalleryManager({ session }: GalleryManagerProps) {
     </AdminWorkspace>
   );
 }
-
