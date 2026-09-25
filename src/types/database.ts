@@ -31,9 +31,9 @@ export interface Database {
         Relationships: EmptyRelationships;
       };
       about_page: {
-        Row: { id: string; headline: string; introduction: string; institutional_note: string; mission: string; vision: string; values_text: string; robocep: string; partners_title: string; partners_body: string; milestones: Json; is_published: boolean; updated_at: string };
-        Insert: { id?: string; headline?: string; introduction?: string; institutional_note?: string; mission?: string; vision?: string; values_text?: string; robocep?: string; partners_title?: string; partners_body?: string; milestones?: Json; is_published?: boolean };
-        Update: { headline?: string; introduction?: string; institutional_note?: string; mission?: string; vision?: string; values_text?: string; robocep?: string; partners_title?: string; partners_body?: string; milestones?: Json; is_published?: boolean };
+        Row: { id: string; headline: string; introduction: string; institutional_note: string; mission: string; vision: string; values_text: string; robocep: string; partners_title: string; partners_body: string; home_headline: string; home_introduction: string; home_history: string; home_mission: string; home_values: string; home_trajectory: string; milestones: Json; is_published: boolean; updated_at: string };
+        Insert: { id?: string; headline?: string; introduction?: string; institutional_note?: string; mission?: string; vision?: string; values_text?: string; robocep?: string; partners_title?: string; partners_body?: string; home_headline?: string; home_introduction?: string; home_history?: string; home_mission?: string; home_values?: string; home_trajectory?: string; milestones?: Json; is_published?: boolean };
+        Update: { headline?: string; introduction?: string; institutional_note?: string; mission?: string; vision?: string; values_text?: string; robocep?: string; partners_title?: string; partners_body?: string; home_headline?: string; home_introduction?: string; home_history?: string; home_mission?: string; home_values?: string; home_trajectory?: string; milestones?: Json; is_published?: boolean };
         Relationships: EmptyRelationships;
       };
       team_members: {
@@ -148,3 +148,4 @@ export interface Database {
     CompositeTypes: Record<string, never>;
   };
 }
+

@@ -1,4 +1,5 @@
-import { AboutPreview, AchievementsAndCompetitionPreview, ClosingCta, GalleryAndSponsorsPreview, NewsPreview, RobotsAndProjectsPreview, TeamPreview } from "@/features/home/home-sections";
+import { AboutPreview } from "@/features/home/about-preview";
+import { AchievementsAndCompetitionPreview, ClosingCta, GalleryAndSponsorsPreview, NewsPreview, RobotsAndProjectsPreview, TeamPreview } from "@/features/home/home-sections";
 import { Hero } from "@/features/home/hero";
 
 export function HomePage() {
@@ -15,3 +16,4 @@ export function HomePage() {
     </main>
   );
 }
+

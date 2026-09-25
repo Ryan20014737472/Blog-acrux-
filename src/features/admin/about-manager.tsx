@@ -19,6 +19,15 @@ const detailFields: { key: TextField; label: string; hint: string }[] = [
   { key: "robocep", label: "ROBOCEP", hint: "Relação da ACRUX com a ROBOCEP" },
 ];
 
+const homeFields: { key: TextField; label: string; maxLength: number }[] = [
+  { key: "homeHeadline", label: "Título da Home", maxLength: 140 },
+  { key: "homeIntroduction", label: "Apresentação da Home", maxLength: 500 },
+  { key: "homeHistory", label: "Cartão História", maxLength: 240 },
+  { key: "homeMission", label: "Cartão Missão", maxLength: 240 },
+  { key: "homeValues", label: "Cartão Valores", maxLength: 240 },
+  { key: "homeTrajectory", label: "Cartão Trajetória", maxLength: 240 },
+];
+
 export function AboutManager({ session }: { session: AdminSession }) {
   const confirm = useAdminConfirm();
   const [draft, setDraft] = useState<AboutContent>(emptyAboutContent);
@@ -115,6 +124,12 @@ export function AboutManager({ session }: { session: AdminSession }) {
       robocep: draft.robocep.trim(),
       partners_title: draft.partnersTitle.trim(),
       partners_body: draft.partnersBody.trim(),
+      home_headline: draft.homeHeadline.trim(),
+      home_introduction: draft.homeIntroduction.trim(),
+      home_history: draft.homeHistory.trim(),
+      home_mission: draft.homeMission.trim(),
+      home_values: draft.homeValues.trim(),
+      home_trajectory: draft.homeTrajectory.trim(),
       milestones,
       is_published: draft.isPublished,
     }, { onConflict: "id" }).select().single();
@@ -130,6 +145,13 @@ export function AboutManager({ session }: { session: AdminSession }) {
     {error ? <p className="mt-7 rounded-2xl border border-red-300/25 bg-red-950/25 p-4 text-sm text-red-100" role="alert">{error}</p> : null}
     {feedback ? <p className="mt-7 rounded-2xl border border-cyan-200/25 bg-cyan-300/8 p-4 text-sm text-acrux-cyan-bright" role="status">{feedback}</p> : null}
     {loading ? <p className="mt-8 text-acrux-muted" aria-live="polite">Carregando conteúdo…</p> : loadFailed ? <p className="mt-6 text-sm text-acrux-muted">O formulário foi bloqueado para evitar sobrescrever conteúdo que não pôde ser carregado. Atualize a página após conferir a conexão.</p> : <form className="mt-9 grid gap-6" onSubmit={(event) => void save(event)}>
+      <section className="glass-panel rounded-3xl p-5 sm:p-7">
+        <h2 className="text-xl font-bold text-white">Apresentação na Home</h2>
+        <p className="mt-2 text-sm text-acrux-muted">Edite o bloco “Constelação em movimento” da página inicial. Campos vazios exibem textos provisórios; só o conteúdo publicado aparece para visitantes.</p>
+        <div className="mt-5 grid gap-5 sm:grid-cols-2">
+          {homeFields.map((field) => <label className="grid gap-2 text-sm font-bold text-white" key={field.key}>{field.label}<textarea className="admin-input min-h-24 resize-y" maxLength={field.maxLength} onChange={(event) => updateField(field.key, event.target.value)} value={draft[field.key]} /></label>)}
+        </div>
+      </section>
       <section className="glass-panel rounded-3xl p-5 sm:p-7">
         <h2 className="text-xl font-bold text-white">Apresentação</h2>
         <div className="mt-5 grid gap-5">
@@ -161,3 +183,4 @@ export function AboutManager({ session }: { session: AdminSession }) {
     </form>}
   </AdminWorkspace>;
 }
+

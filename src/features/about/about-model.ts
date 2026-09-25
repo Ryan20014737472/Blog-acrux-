@@ -15,6 +15,12 @@ export interface AboutContent {
   robocep: string;
   partnersTitle: string;
   partnersBody: string;
+  homeHeadline: string;
+  homeIntroduction: string;
+  homeHistory: string;
+  homeMission: string;
+  homeValues: string;
+  homeTrajectory: string;
   milestones: AboutMilestone[];
   isPublished: boolean;
 }
@@ -31,6 +37,12 @@ export const emptyAboutContent: AboutContent = {
   robocep: "",
   partnersTitle: "",
   partnersBody: "",
+  homeHeadline: "",
+  homeIntroduction: "",
+  homeHistory: "",
+  homeMission: "",
+  homeValues: "",
+  homeTrajectory: "",
   milestones: [],
   isPublished: false,
 };
@@ -59,7 +71,14 @@ export function aboutFromRow(row: AboutRow): AboutContent {
     robocep: row.robocep,
     partnersTitle: row.partners_title,
     partnersBody: row.partners_body,
+    homeHeadline: row.home_headline,
+    homeIntroduction: row.home_introduction,
+    homeHistory: row.home_history,
+    homeMission: row.home_mission,
+    homeValues: row.home_values,
+    homeTrajectory: row.home_trajectory,
     milestones,
     isPublished: row.is_published,
   };
 }
+

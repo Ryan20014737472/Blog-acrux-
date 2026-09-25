@@ -1,4 +1,3 @@
-import { ScrollReveal } from "@/components/animations/scroll-reveal";
 import { ArrowLink } from "@/components/ui/arrow-link";
 import { TeamPreviewCards } from "@/features/home/team-preview";
 import { GalleryPreviewCards } from "@/features/home/gallery-preview";
@@ -23,48 +22,6 @@ function SectionLead({ eyebrow, title, description, href, action }: SectionLeadP
       </div>
       {href && action ? <ArrowLink href={href}>{action}</ArrowLink> : null}
     </div>
-  );
-}
-
-export function AboutPreview() {
-  return (
-    <section className="section scroll-mt-24" id="sobre-acrux">
-      <div className="shell grid gap-9 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-        <ScrollReveal>
-          <div>
-            <p className="eyebrow">Constelação em movimento</p>
-            <h2 className="section-heading mt-4">Uma equipe que conecta pessoas, ideias e tecnologia.</h2>
-            <p className="body-copy mt-6">
-              A ACRUX ROBOCEP terá aqui seu espaço para compartilhar a própria história, propósito, aprendizado e impacto. O texto institucional completo será adicionado pela equipe.
-            </p>
-            <ArrowLink className="mt-8" href="/sobre" variant="secondary">
-              Conheça a ACRUX
-            </ArrowLink>
-          </div>
-        </ScrollReveal>
-
-        <ScrollReveal delay={0.12}>
-          <div className="glass-panel panel-grid relative overflow-hidden rounded-3xl p-6 sm:p-8">
-            <div aria-hidden="true" className="absolute -right-18 -top-18 h-48 w-48 rounded-full border border-cyan-200/13" />
-            <svg aria-hidden="true" className="absolute inset-0 h-full w-full opacity-50" viewBox="0 0 480 330">
-              <path className="constellation-line" d="M55 236 L133 158 L224 208 L302 95 L405 148" />
-              <path className="constellation-line" d="M133 158 L201 82 L302 95" />
-              {[ [55,236], [133,158], [224,208], [302,95], [405,148], [201,82] ].map(([cx, cy]) => (
-                <circle cx={cx} cy={cy} fill="#4BD4E8" key={`${cx}-${cy}`} r="3" />
-              ))}
-            </svg>
-            <div className="relative grid gap-4 sm:grid-cols-2">
-              {["História", "Missão", "Valores", "Trajetória"].map((item) => (
-                <div className="rounded-2xl border border-white/10 bg-[#020817]/46 p-4" key={item}>
-                  <p className="text-sm font-bold text-white">{item}</p>
-                  <p className="mt-2 text-sm leading-6 text-acrux-muted">Conteúdo oficial será adicionado posteriormente.</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </ScrollReveal>
-      </div>
-    </section>
   );
 }
 
@@ -224,3 +181,4 @@ export function ClosingCta() {
     </section>
   );
 }
+
