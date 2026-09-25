@@ -1,6 +1,6 @@
 import { AdminSection } from "@/components/admin/admin-section";
 
-const sections = ["blog", "equipe", "robos", "projetos", "competicoes", "galeria", "temporadas", "patrocinadores", "usuarios"] as const;
+const sections = ["sobre", "blog", "equipe", "robos", "projetos", "competicoes", "galeria", "temporadas", "patrocinadores", "usuarios"] as const;
 
 interface AdminSectionPageProps {
   params: Promise<{ section: string }>;

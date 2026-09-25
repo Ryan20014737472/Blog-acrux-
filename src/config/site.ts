@@ -31,6 +31,7 @@ export const publicNavigation = [
 
 export const adminNavigation = [
   { href: "/admin", label: "Dashboard" },
+  { href: "/admin/sobre", label: "Sobre" },
   { href: "/admin/blog", label: "Blog" },
   { href: "/admin/equipe", label: "Equipe" },
   { href: "/admin/robos", label: "Robôs" },

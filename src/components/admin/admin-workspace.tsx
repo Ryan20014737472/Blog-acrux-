@@ -21,7 +21,7 @@ interface AdminWorkspaceProps {
 export function AdminWorkspace({ children, description, section, session, title }: AdminWorkspaceProps) {
   const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const navigation = session.role === "admin" ? adminNavigation : adminNavigation.filter((item) => item.label !== "Usuários");
+  const navigation = session.role === "admin" ? adminNavigation : adminNavigation.filter((item) => item.label !== "Usuários" && item.label !== "Sobre");
 
   async function signOut() {
     const supabase = createSupabaseBrowserClient();

@@ -30,6 +30,12 @@ export interface Database {
         Update: { slug?: string; label?: string; year?: number; summary?: string | null; is_current?: boolean; is_published?: boolean };
         Relationships: EmptyRelationships;
       };
+      about_page: {
+        Row: { id: string; headline: string; introduction: string; institutional_note: string; mission: string; vision: string; values_text: string; robocep: string; partners_title: string; partners_body: string; milestones: Json; is_published: boolean; updated_at: string };
+        Insert: { id?: string; headline?: string; introduction?: string; institutional_note?: string; mission?: string; vision?: string; values_text?: string; robocep?: string; partners_title?: string; partners_body?: string; milestones?: Json; is_published?: boolean };
+        Update: { headline?: string; introduction?: string; institutional_note?: string; mission?: string; vision?: string; values_text?: string; robocep?: string; partners_title?: string; partners_body?: string; milestones?: Json; is_published?: boolean };
+        Relationships: EmptyRelationships;
+      };
       team_members: {
         Row: { id: string; profile_id: string | null; slug: string; name: string; area: string | null; role_title: string | null; short_bio: string | null; photo_path: string | null; display_order: number; is_published: boolean; is_home_featured: boolean; created_at: string; updated_at: string };
         Insert: { id?: string; profile_id?: string | null; slug: string; name: string; area?: string | null; role_title?: string | null; short_bio?: string | null; photo_path?: string | null; display_order?: number; is_published?: boolean; is_home_featured?: boolean };
@@ -142,4 +148,3 @@ export interface Database {
     CompositeTypes: Record<string, never>;
   };
 }
-

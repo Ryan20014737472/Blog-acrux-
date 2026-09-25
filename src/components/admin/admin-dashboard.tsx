@@ -10,6 +10,7 @@ import { SiteLogo } from "@/components/layout/site-logo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const dashboardCards = [
+  { label: "Sobre", description: "Editar a apresentação institucional e a trajetória." },
   { label: "Blog", description: "Criar, editar e publicar postagens." },
   { label: "Equipe", description: "Cadastrar integrantes e perfis públicos." },
   { label: "Robôs", description: "Organizar robôs e temporadas." },
@@ -27,7 +28,7 @@ export function AdminDashboard() {
 function AdminDashboardContent({ session }: { session: AdminSession }) {
   const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const navigation = session.role === "admin" ? adminNavigation : adminNavigation.filter((item) => item.label !== "Usuários");
+  const navigation = session.role === "admin" ? adminNavigation : adminNavigation.filter((item) => item.label !== "Usuários" && item.label !== "Sobre");
 
   async function signOut() {
     const supabase = createSupabaseBrowserClient();
@@ -59,9 +60,9 @@ function AdminDashboardContent({ session }: { session: AdminSession }) {
         <div>
           <p className="eyebrow">Dashboard</p>
           <h1 className="mt-4 text-4xl font-black tracking-[-0.06em] text-white sm:text-5xl">Olá, {session.displayName ?? "equipe"}.</h1>
-          <p className="body-copy mt-5">Painel inicial para administrar o conteúdo público. Blog, Equipe e Galeria já estão conectados ao Supabase; as demais áreas continuam em preparação.</p>
+          <p className="body-copy mt-5">Gerencie as páginas e os conteúdos públicos da ACRUX. As alterações publicadas aparecem no site após serem salvas.</p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {dashboardCards.map((card) => (
+            {dashboardCards.filter((card) => session.role === "admin" || card.label !== "Sobre").map((card) => (
               <Link className="glass-panel card-hover rounded-2xl p-5" href={`/admin/${card.label.toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`} key={card.label}>
                 <p className="text-sm font-bold text-white">{card.label}</p>
                 <p className="mt-2 text-sm leading-6 text-acrux-muted">{card.description}</p>

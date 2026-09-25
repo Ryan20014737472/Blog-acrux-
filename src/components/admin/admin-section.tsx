@@ -16,12 +16,14 @@ import { ProjectsManager } from "@/features/admin/projects-manager";
 import { UsersManager } from "@/features/admin/users-manager";
 import { SponsorsManager } from "@/features/admin/sponsors-manager";
 import { SeasonsManager } from "@/features/admin/seasons-manager";
+import { AboutManager } from "@/features/admin/about-manager";
 
 interface AdminSectionProps {
   section: string;
 }
 
 const copy: Record<string, { title: string; description: string }> = {
+  sobre: { title: "Editar página Sobre", description: "Apresentação, missão, trajetória e parcerias da ACRUX." },
   blog: { title: "Gerenciar blog", description: "A edição de postagens, categorias, tags, capas e status será conectada ao Supabase nesta área." },
   equipe: { title: "Gerenciar equipe", description: "Perfis, fotos, áreas, funções e ordem de exibição serão administrados aqui." },
   robos: { title: "Gerenciar robôs", description: "Robôs, mecanismos, componentes, temporadas e galerias serão administrados aqui." },
@@ -40,7 +42,7 @@ export function AdminSection({ section }: AdminSectionProps) {
 function AdminSectionContent({ section, session }: AdminSectionProps & { session: AdminSession }) {
   const router = useRouter();
   const content = copy[section] ?? { title: "Área administrativa", description: "Seção em preparação." };
-  const canAccess = section !== "usuarios" || session.role === "admin";
+  const canAccess = !["usuarios", "sobre"].includes(section) || session.role === "admin";
 
   useEffect(() => {
     if (!canAccess) {
@@ -63,6 +65,10 @@ function AdminSectionContent({ section, session }: AdminSectionProps & { session
 
   if (section === "blog") {
     return <BlogManager session={session} />;
+  }
+
+  if (section === "sobre") {
+    return <AboutManager session={session} />;
   }
 
   if (section === "equipe") {
