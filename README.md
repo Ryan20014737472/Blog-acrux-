@@ -36,7 +36,7 @@ O arquivo original foi preservado byte a byte em `public/brand/acrux-logo.jpg`. 
 1. Instale as dependências com `pnpm install`.
 2. Copie `.env.example` para `.env.local`.
 3. Preencha as variáveis do Supabase.
-4. Rode a migração em `supabase/migrations/20260904000000_initial_acrux_schema.sql` no projeto Supabase.
+4. Aplique as migrações de `supabase/migrations/` em ordem cronológica no projeto Supabase.
 5. Inicie com `pnpm dev`.
 
 Para validar a aplicação:
@@ -73,6 +73,8 @@ where id = '<uuid-da-conta-autorizada>';
 ```
 
 Os buckets `avatars`, `blog`, `robots`, `projects`, `gallery` e `sponsors` são criados pela migração. As políticas RLS deixam conteúdo publicado público, permitem que editores gerenciem posts e mídias, e reservam a administração de usuários e conteúdo estrutural aos administradores.
+
+Para usar várias imagens por postagem, aplique também `supabase/migrations/20260930230220_add_post_image_paths.sql` antes de publicar a atualização do site. No painel do blog, selecione uma ou mais imagens, escolha a capa e salve a postagem. A capa continua em `posts.cover_path`; a lista de imagens fica em `posts.image_paths` e usa o bucket `blog` existente. Postagens antigas com apenas uma capa continuam funcionando. Remover uma imagem da postagem não apaga seu arquivo do acervo.
 
 `SUPABASE_SECRET_KEY` é exclusivamente server-side: nunca a use com prefixo `NEXT_PUBLIC_` e nunca a exponha no navegador. O projeto também aceita os nomes legados `NEXT_PUBLIC_SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` quando necessário.
 
