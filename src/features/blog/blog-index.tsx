@@ -1,9 +1,11 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
 import { ArrowLink } from "@/components/ui/arrow-link";
+import { getPostImagePaths } from "@/features/blog/post-images";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getPublicImageUrl } from "@/lib/supabase/storage";
 import type { Database } from "@/types/database";
@@ -100,6 +102,7 @@ export function BlogIndex() {
   const featuredPost = filteredPosts.find((post) => post.is_featured) ?? filteredPosts[0] ?? null;
   const recentPosts = filteredPosts.filter((post) => post.id !== featuredPost?.id);
   const selectedPost = posts.find((post) => post.id === selectedPostId) ?? null;
+  const selectedPostImagePaths = selectedPost ? getPostImagePaths(selectedPost) : [];
 
   return (
     <main className="section pt-34">
@@ -173,9 +176,28 @@ export function BlogIndex() {
             <button className="text-sm font-bold text-acrux-cyan-bright hover:text-white" onClick={() => setSelectedPostId(null)} type="button">← Fechar leitura</button>
             <p className="mt-7 text-sm text-acrux-muted">{formatDate(selectedPost.published_at)} · Equipe ACRUX</p>
             <h2 className="mt-3 max-w-4xl text-3xl font-black tracking-[-0.05em] text-white sm:text-5xl">{selectedPost.title}</h2>
-            {browserClient && selectedPost.cover_path ? <img alt="" className="mt-7 max-h-120 w-full rounded-2xl object-cover" src={getPublicImageUrl(browserClient, "blog", selectedPost.cover_path) ?? ""} /> : null}
+            {browserClient && selectedPostImagePaths[0] ? <Image alt="" className="mt-7 max-h-120 w-full rounded-2xl object-contain" height={900} src={getPublicImageUrl(browserClient, "blog", selectedPostImagePaths[0]) ?? ""} unoptimized width={1200} /> : null}
             <p className="mt-7 max-w-3xl text-lg leading-8 text-acrux-muted">{selectedPost.excerpt}</p>
             <div className="mt-7 max-w-3xl whitespace-pre-wrap text-base leading-8 text-white/88">{selectedPost.body}</div>
+            {browserClient && selectedPostImagePaths.length > 1 ? (
+              <section aria-label="Imagens da postagem" className="mt-8">
+                <h3 className="text-lg font-bold text-white">Imagens da postagem</h3>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  {selectedPostImagePaths.slice(1).map((path, index) => (
+                    <Image
+                      alt={`Imagem ${index + 2} da postagem ${selectedPost.title}`}
+                      className="max-h-120 w-full rounded-2xl border border-white/10 object-contain"
+                      height={900}
+                      key={path}
+                      loading="lazy"
+                      src={getPublicImageUrl(browserClient, "blog", path) ?? ""}
+                      unoptimized
+                      width={1200}
+                    />
+                  ))}
+                </div>
+              </section>
+            ) : null}
             <div className="mt-8 flex flex-wrap gap-2">{selectedPost.tags.map((tag) => <span className="rounded-full border border-white/12 px-3 py-1.5 text-xs font-bold text-acrux-muted" key={tag}>#{tag}</span>)}</div>
           </article>
         ) : null}

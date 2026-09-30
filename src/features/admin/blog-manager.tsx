@@ -1,14 +1,16 @@
 "use client";
 
+import Image from "next/image";
 import type { ChangeEvent, FormEvent } from "react";
 import { useCallback, useEffect, useState } from "react";
 
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
 import { useAdminConfirm } from "@/components/admin/admin-confirmation-provider";
 import type { AdminSession } from "@/components/admin/admin-gate";
+import { getPostImagePaths } from "@/features/blog/post-images";
 import { parseTags, slugify } from "@/lib/content/slug";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { getPublicImageUrl, uploadPublicImage } from "@/lib/supabase/storage";
+import { getPublicImageUrl, uploadPublicImage, validateImageFile } from "@/lib/supabase/storage";
 import type { PublicationStatus } from "@/types/content";
 import type { Database } from "@/types/database";
 
@@ -24,6 +26,7 @@ interface PostDraft {
   body: string;
   categoryIds: string[];
   coverPath: string | null;
+  imagePaths: string[];
   excerpt: string;
   featured: boolean;
   id: string | null;
@@ -41,6 +44,7 @@ const emptyDraft: PostDraft = {
   excerpt: "",
   body: "",
   coverPath: null,
+  imagePaths: [],
   tags: "",
   status: "draft",
   featured: false,
@@ -56,6 +60,7 @@ function toDraft(post: ManagedPost): PostDraft {
     excerpt: post.excerpt,
     body: post.body,
     coverPath: post.cover_path,
+    imagePaths: getPostImagePaths(post),
     tags: post.tags.join(", "),
     status: post.status,
     featured: post.is_featured,
@@ -96,8 +101,8 @@ export function BlogManager({ session }: BlogManagerProps) {
 
   const canManageCategories = session.role === "admin";
   const editorLocked = session.role === "editor" && Boolean(draft.id) && draft.status !== "draft";
+  const isBusy = isSaving || isUploading;
   const browserClient = createSupabaseBrowserClient();
-  const coverUrl = browserClient ? getPublicImageUrl(browserClient, "blog", draft.coverPath) : null;
 
   const loadContent = useCallback(async () => {
     const supabase = createSupabaseBrowserClient();
@@ -156,9 +161,21 @@ export function BlogManager({ session }: BlogManagerProps) {
     }));
   }
 
-  async function uploadCover(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  async function uploadImages(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    const files = Array.from(input.files ?? []);
+    input.value = "";
+    if (!files.length || isBusy || editorLocked) return;
+
+    setError(null);
+    setFeedback(null);
+    for (const file of files) {
+      const validationError = validateImageFile(file);
+      if (validationError) {
+        setError(`${file.name}: ${validationError}`);
+        return;
+      }
+    }
 
     const supabase = createSupabaseBrowserClient();
     if (!supabase) {
@@ -166,20 +183,42 @@ export function BlogManager({ session }: BlogManagerProps) {
       return;
     }
 
-    setError(null);
-    setFeedback(null);
     setIsUploading(true);
+    let uploadedCount = 0;
 
     try {
-      const path = await uploadPublicImage(supabase, "blog", "posts", file);
-      setDraft((current) => ({ ...current, coverPath: path }));
-      setFeedback("Imagem de capa enviada. Salve a postagem para vincular a imagem.");
+      for (const file of files) {
+        const path = await uploadPublicImage(supabase, "blog", "posts", file);
+        setDraft((current) => ({
+          ...current,
+          coverPath: current.coverPath ?? path,
+          imagePaths: [...current.imagePaths, path],
+        }));
+        uploadedCount += 1;
+      }
+      setFeedback(uploadedCount === 1
+        ? "Imagem enviada. Salve a postagem para vincular a imagem."
+        : `${uploadedCount} imagens enviadas. Salve a postagem para vincular as imagens.`);
     } catch (uploadError) {
-      setError(messageFromError(uploadError, "Não foi possível enviar a imagem."));
+      const detail = uploadError instanceof Error ? uploadError.message : "Não foi possível enviar as imagens.";
+      const keptImages = uploadedCount === 1
+        ? " A imagem já enviada foi mantida. Salve a postagem para vinculá-la."
+        : uploadedCount > 1 ? ` As ${uploadedCount} imagens já enviadas foram mantidas. Salve a postagem para vinculá-las.` : "";
+      setError(`${detail}${keptImages}`);
     } finally {
       setIsUploading(false);
-      event.target.value = "";
     }
+  }
+
+  function removeImage(path: string) {
+    setDraft((current) => {
+      const imagePaths = current.imagePaths.filter((imagePath) => imagePath !== path);
+      return {
+        ...current,
+        imagePaths,
+        coverPath: current.coverPath === path ? imagePaths[0] ?? null : current.coverPath,
+      };
+    });
   }
 
   async function createCategory() {
@@ -213,6 +252,7 @@ export function BlogManager({ session }: BlogManagerProps) {
 
   async function savePost(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isBusy) return;
     if (editorLocked) {
       setError("Contas editoras podem alterar apenas os próprios rascunhos. Publicação e arquivamento exigem administrador.");
       return;
@@ -241,6 +281,7 @@ export function BlogManager({ session }: BlogManagerProps) {
       excerpt,
       body,
       cover_path: draft.coverPath,
+      image_paths: draft.imagePaths,
       tags: parseTags(draft.tags),
       status: draft.status,
       is_featured: draft.featured,
@@ -305,8 +346,8 @@ export function BlogManager({ session }: BlogManagerProps) {
   }
 
   async function deletePost() {
-    if (!draft.id || session.role !== "admin") return;
-    if (!await confirm({ title: "Excluir postagem?", description: `“${draft.title}” será removida definitivamente. A imagem enviada continuará no acervo de mídia.`, confirmLabel: "Excluir postagem", tone: "danger" })) return;
+    if (!draft.id || session.role !== "admin" || isBusy) return;
+    if (!await confirm({ title: "Excluir postagem?", description: `“${draft.title}” será removida definitivamente. As imagens enviadas continuarão no acervo de mídia.`, confirmLabel: "Excluir postagem", tone: "danger" })) return;
 
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;
@@ -323,7 +364,7 @@ export function BlogManager({ session }: BlogManagerProps) {
     }
 
     setDraft(emptyDraft);
-    setFeedback("Postagem excluída. A imagem enviada continua guardada no acervo de mídia.");
+    setFeedback("Postagem excluída. As imagens enviadas continuam guardadas no acervo de mídia.");
     await loadContent();
   }
 
@@ -341,7 +382,7 @@ export function BlogManager({ session }: BlogManagerProps) {
               <p className="text-lg font-bold text-white">Postagens</p>
               <p className="mt-1 text-sm text-acrux-muted">{posts.length} registro(s)</p>
             </div>
-            <button className="button-secondary min-h-10 px-4" onClick={() => { setDraft(emptyDraft); setError(null); setFeedback(null); }} type="button">Nova</button>
+            <button className="button-secondary min-h-10 px-4" disabled={isBusy} onClick={() => { setDraft(emptyDraft); setError(null); setFeedback(null); }} type="button">Nova</button>
           </div>
           <div className="mt-5 grid gap-2">
             {isLoading ? <p className="text-sm text-acrux-muted">Carregando postagens…</p> : null}
@@ -350,6 +391,7 @@ export function BlogManager({ session }: BlogManagerProps) {
               <button
                 className={draft.id === post.id ? "rounded-2xl border border-cyan-200/32 bg-cyan-300/9 p-4 text-left" : "rounded-2xl border border-white/8 bg-[#020817]/30 p-4 text-left transition-colors hover:border-cyan-200/22"}
                 key={post.id}
+                disabled={isBusy}
                 onClick={() => { setDraft(toDraft(post)); setError(null); setFeedback(null); }}
                 type="button"
               >
@@ -369,7 +411,7 @@ export function BlogManager({ session }: BlogManagerProps) {
               <p className="text-lg font-bold text-white">{draft.id ? "Editar postagem" : "Nova postagem"}</p>
               <p className="mt-1 text-sm text-acrux-muted">Campos com conteúdo oficial só devem ser publicados após revisão da equipe.</p>
             </div>
-            {draft.id && session.role === "admin" ? <button className="rounded-full border border-red-200/20 px-4 py-2 text-sm font-bold text-red-100 transition-colors hover:border-red-200/50" disabled={isSaving} onClick={deletePost} type="button">Excluir</button> : null}
+            {draft.id && session.role === "admin" ? <button className="rounded-full border border-red-200/20 px-4 py-2 text-sm font-bold text-red-100 transition-colors hover:border-red-200/50" disabled={isBusy} onClick={deletePost} type="button">Excluir</button> : null}
           </div>
 
           <div className="mt-7 grid gap-5">
@@ -392,11 +434,29 @@ export function BlogManager({ session }: BlogManagerProps) {
             </label>
 
             <div className="grid gap-3">
-              <label className="grid gap-2 text-sm font-bold text-white" htmlFor="post-cover">
-                Imagem de capa
-                <input accept="image/avif,image/gif,image/jpeg,image/png,image/webp" className="admin-file-input" disabled={isUploading} id="post-cover" onChange={uploadCover} type="file" />
+              <label className="grid gap-2 text-sm font-bold text-white" htmlFor="post-images">
+                Imagens da postagem
+                <input accept="image/avif,image/gif,image/jpeg,image/png,image/webp" aria-describedby="post-images-help" className="admin-file-input" disabled={isBusy || editorLocked} id="post-images" multiple onChange={uploadImages} type="file" />
               </label>
-              {coverUrl ? <img alt="Prévia da imagem de capa" className="max-h-68 w-full rounded-2xl border border-white/10 object-cover" src={coverUrl} /> : <p className="text-sm text-acrux-muted">Nenhuma capa enviada.</p>}
+              <p className="text-sm text-acrux-muted" id="post-images-help">Selecione uma ou mais imagens (até 10 MB cada). A capa aparece nos cards; todas as imagens aparecem na leitura da postagem. Salve para aplicar as alterações.</p>
+              {isUploading ? <p className="text-sm text-acrux-cyan-bright" role="status">Enviando imagens…</p> : null}
+              {draft.imagePaths.length ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {draft.imagePaths.map((path, index) => {
+                    const imageUrl = browserClient ? getPublicImageUrl(browserClient, "blog", path) : null;
+                    const isCover = path === draft.coverPath;
+                    return (
+                      <div className="rounded-2xl border border-white/10 p-3" key={path}>
+                        {imageUrl ? <Image alt={`Prévia da imagem ${index + 1}`} className="aspect-[4/3] w-full rounded-xl object-contain" height={450} src={imageUrl} unoptimized width={600} /> : null}
+                        <div className="mt-3 flex flex-wrap items-center gap-3">
+                          {isCover ? <span className="text-sm font-bold text-acrux-cyan-bright">Capa</span> : <button aria-label={`Usar imagem ${index + 1} como capa`} className="text-sm font-bold text-acrux-cyan-bright hover:text-white" disabled={isBusy || editorLocked} onClick={() => setDraft((current) => ({ ...current, coverPath: path }))} type="button">Usar como capa</button>}
+                          <button aria-label={`Remover imagem ${index + 1} da postagem`} className="ml-auto text-sm font-bold text-red-100 hover:text-white" disabled={isBusy || editorLocked} onClick={() => removeImage(path)} type="button">Remover</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : <p className="text-sm text-acrux-muted">Nenhuma imagem enviada.</p>}
             </div>
 
             <label className="grid gap-2 text-sm font-bold text-white" htmlFor="post-tags">

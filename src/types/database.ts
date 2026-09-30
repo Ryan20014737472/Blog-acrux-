@@ -97,9 +97,9 @@ export interface Database {
         Relationships: EmptyRelationships;
       };
       posts: {
-        Row: { id: string; season_id: string | null; author_id: string | null; slug: string; title: string; excerpt: string; body: string; cover_path: string | null; tags: string[]; status: Status; is_featured: boolean; published_at: string | null; created_at: string; updated_at: string };
-        Insert: { id?: string; season_id?: string | null; author_id?: string | null; slug: string; title: string; excerpt: string; body: string; cover_path?: string | null; tags?: string[]; status?: Status; is_featured?: boolean; published_at?: string | null };
-        Update: { season_id?: string | null; author_id?: string | null; slug?: string; title?: string; excerpt?: string; body?: string; cover_path?: string | null; tags?: string[]; status?: Status; is_featured?: boolean; published_at?: string | null };
+        Row: { id: string; season_id: string | null; author_id: string | null; slug: string; title: string; excerpt: string; body: string; cover_path: string | null; image_paths: string[]; tags: string[]; status: Status; is_featured: boolean; published_at: string | null; created_at: string; updated_at: string };
+        Insert: { id?: string; season_id?: string | null; author_id?: string | null; slug: string; title: string; excerpt: string; body: string; cover_path?: string | null; image_paths?: string[]; tags?: string[]; status?: Status; is_featured?: boolean; published_at?: string | null };
+        Update: { season_id?: string | null; author_id?: string | null; slug?: string; title?: string; excerpt?: string; body?: string; cover_path?: string | null; image_paths?: string[]; tags?: string[]; status?: Status; is_featured?: boolean; published_at?: string | null };
         Relationships: EmptyRelationships;
       };
       post_categories: {
