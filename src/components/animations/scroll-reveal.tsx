@@ -23,7 +23,8 @@ export function ScrollReveal({
   return (
     <motion.div
       className={cn(className)}
-      initial={reduceMotion ? false : { opacity: 0, y }}
+      initial={{ opacity: 0, y }}
+      animate={reduceMotion ? { opacity: 1, y: 0 } : undefined}
       transition={{
         duration: reduceMotion ? 0 : 0.55,
         delay: reduceMotion ? 0 : delay,
