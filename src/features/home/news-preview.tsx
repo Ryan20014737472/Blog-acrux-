@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
 
 import { ArrowLink } from "@/components/ui/arrow-link";
+import { PostImage } from "@/features/blog/post-image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getPublicImageUrl } from "@/lib/supabase/storage";
 import type { Database } from "@/types/database";
@@ -50,7 +50,7 @@ export function NewsPreviewCards() {
       const cover = client ? getPublicImageUrl(client, "blog", post.cover_path) : null;
       const date = post.published_at ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(new Date(post.published_at)) : null;
       return <article className={`glass-panel card-hover overflow-hidden rounded-2xl ${index === 0 ? posts.length === 1 ? "lg:col-span-2" : "lg:row-span-2" : ""}`} key={post.id}>
-        {index === 0 && cover ? <Image alt="" className="h-52 w-full object-cover sm:h-64" height={400} loading="lazy" src={cover} unoptimized width={800} /> : null}
+        {index === 0 && cover ? <PostImage alt="" className="max-h-64 sm:max-h-80" src={cover} /> : null}
         <div className={index === 0 ? "p-6 sm:p-8" : "p-5 sm:p-6"}>
           <p className="text-xs font-bold uppercase tracking-[0.15em] text-acrux-cyan-bright">{index === 0 ? "Em destaque no blog" : "Últimas notícias"}{date ? ` · ${date}` : ""}</p>
           <h3 className={`mt-3 font-bold tracking-[-0.035em] text-white ${index === 0 ? "text-2xl sm:text-3xl" : "text-xl"}`}>{post.title}</h3>
