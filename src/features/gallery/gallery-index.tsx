@@ -21,6 +21,7 @@ export function GalleryIndex() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const browserClient = createSupabaseBrowserClient();
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
@@ -28,6 +29,7 @@ export function GalleryIndex() {
     const dialog = dialogRef.current;
     const previousOverflow = document.body.style.overflow;
     dialog?.showModal();
+    closeButtonRef.current?.focus({ preventScroll: true });
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = previousOverflow;
@@ -163,7 +165,7 @@ export function GalleryIndex() {
                   <p className="text-xs font-bold uppercase tracking-[0.15em] text-acrux-cyan-bright">{activeGallery.category ?? "Galeria"}</p>
                   <h2 className="mt-2 max-h-[25dvh] overflow-y-auto overscroll-contain text-xl font-bold sm:text-3xl" id="gallery-dialog-title" tabIndex={0}>{activeGallery.title}</h2>
                 </div>
-                <button aria-label="Fechar álbum" autoFocus className="min-h-11 shrink-0 rounded-full border border-white/14 px-4 py-2 text-sm font-bold hover:border-cyan-200/30" onClick={closeGallery} type="button">Fechar</button>
+                <button aria-label="Fechar álbum" className="min-h-11 shrink-0 rounded-full border border-white/14 px-4 py-2 text-sm font-bold hover:border-cyan-200/30" onClick={closeGallery} ref={closeButtonRef} type="button">Fechar</button>
               </div>
               <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:p-6 sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))]">
                 {activeImage ? (

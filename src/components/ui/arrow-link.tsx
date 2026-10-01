@@ -30,6 +30,7 @@ export function ArrowLink({
   return (
     <motion.div
       className={cn("min-w-0 max-w-full", variant === "text" ? "inline-flex" : "flex w-full sm:inline-flex sm:w-auto")}
+      tabIndex={-1}
       whileHover={reduceMotion ? undefined : { x: variant === "text" ? 3 : 0 }}
       whileTap={reduceMotion ? undefined : { scale: 0.98 }}
     >

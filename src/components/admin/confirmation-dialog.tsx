@@ -25,6 +25,7 @@ export function ConfirmationDialog({ request, busy, onCancel, onConfirm }: {
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog || !request) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     setTyped("");
@@ -32,6 +33,7 @@ export function ConfirmationDialog({ request, busy, onCancel, onConfirm }: {
     return () => {
       dialog.close();
       document.body.style.overflow = previousOverflow;
+      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
     };
   }, [request]);
 

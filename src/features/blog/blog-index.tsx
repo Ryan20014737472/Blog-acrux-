@@ -153,6 +153,7 @@ export function BlogIndex() {
                 className={activeCategory === category ? "min-h-11 max-w-full break-words rounded-full border border-cyan-200/36 bg-cyan-300/13 px-4 py-2 text-sm font-bold text-acrux-cyan-bright" : "min-h-11 max-w-full break-words rounded-full border border-white/12 bg-white/3 px-4 py-2 text-sm font-bold text-acrux-muted transition-colors hover:border-cyan-200/28 hover:text-white"}
                 key={category}
                 onClick={() => setActiveCategory(category)}
+                tabIndex={0}
                 type="button"
                 whileTap={reduceMotion ? undefined : { scale: 0.97 }}
               >
@@ -181,7 +182,7 @@ export function BlogIndex() {
                 <h2 className="mt-3 text-2xl font-bold tracking-[-0.05em] text-white sm:text-3xl">{featuredPost.title}</h2>
                 <p className="mt-4 max-w-2xl text-base leading-7 text-acrux-muted">{featuredPost.excerpt}</p>
                 <div className="mt-5 flex flex-wrap gap-2">
-                  {featuredPost.categories.map((category) => <span className="rounded-full border border-cyan-200/18 bg-cyan-300/7 px-3 py-1 text-xs font-bold text-acrux-cyan-bright" key={category.id}>{category.name}</span>)}
+                  {featuredPost.categories.map((category) => <span className="min-w-0 max-w-full rounded-full border border-cyan-200/18 bg-cyan-300/7 px-3 py-1 text-xs font-bold text-acrux-cyan-bright [overflow-wrap:anywhere]" key={category.id}>{category.name}</span>)}
                 </div>
                 <button className="button-primary mt-7 w-full sm:w-auto" onClick={(event) => openPost(featuredPost.id, event.currentTarget)} type="button">Ler postagem</button>
               </div>
@@ -225,7 +226,7 @@ export function BlogIndex() {
                 </div>
               </section>
             ) : null}
-            <div className="mt-8 flex flex-wrap gap-2">{selectedPost.tags.map((tag) => <span className="rounded-full border border-white/12 px-3 py-1.5 text-xs font-bold text-acrux-muted" key={tag}>#{tag}</span>)}</div>
+            <div className="mt-8 flex flex-wrap gap-2">{selectedPost.tags.map((tag) => <span className="min-w-0 max-w-full rounded-full border border-white/12 px-3 py-1.5 text-xs font-bold text-acrux-muted [overflow-wrap:anywhere]" key={tag}>#{tag}</span>)}</div>
           </article>
         ) : null}
 
