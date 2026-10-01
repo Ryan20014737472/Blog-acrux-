@@ -118,51 +118,51 @@ export function CompetitionRelations({ competitionId, canManage, disabled, onBus
   const visibleMembers = canManage ? members : members.filter((member) => participantIds.includes(member.id));
 
   return (
-    <section aria-busy={isLoading || isBusy} aria-labelledby="competition-relations-title" className="glass-panel rounded-3xl p-5 sm:p-7">
+    <section aria-busy={isLoading || isBusy} aria-labelledby="competition-relations-title" className="glass-panel min-w-0 rounded-3xl p-4 sm:p-7">
       <h2 className="text-lg font-bold text-white" id="competition-relations-title">Participantes e fotos</h2>
       <p className="mt-2 text-sm leading-6 text-acrux-muted">Os vínculos abaixo são salvos imediatamente, separadamente dos dados da competição.</p>
       {!canManage ? <p className="mt-2 text-sm text-acrux-muted">Sua conta pode consultar os vínculos. Alterações exigem uma conta administradora.</p> : null}
       {isLoading ? <p className="mt-6 text-sm text-acrux-muted" role="status">Carregando participantes e álbuns…</p> : null}
       {loadError ? <div className="mt-6 rounded-2xl border border-red-300/22 bg-red-950/24 p-4">
         <p className="text-sm text-red-100" role="alert">{loadError}</p>
-        <button className="button-secondary mt-3 min-h-10 px-4" disabled={locked} onClick={() => setRetry((current) => current + 1)} type="button">Tentar novamente</button>
+        <button className="button-secondary mt-3 min-h-11 w-full px-4 sm:w-auto" disabled={locked} onClick={() => setRetry((current) => current + 1)} type="button">Tentar novamente</button>
       </div> : null}
-      {!isLoading && !loadError ? <div className="mt-7 grid gap-8">
-        <fieldset disabled={locked || !canManage}>
+      {!isLoading && !loadError ? <div className="mt-7 grid min-w-0 gap-8">
+        <fieldset className="min-w-0" disabled={locked || !canManage}>
           <legend className="font-bold text-white">Integrantes participantes</legend>
           <p className="mt-2 text-sm text-acrux-muted">{participantIds.length} participante(s) vinculado(s)</p>
-          {visibleMembers.length ? <div className="mt-4 grid max-h-72 gap-2 overflow-y-auto">
-            {visibleMembers.map((member) => <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-[#020817]/30 p-3 text-sm" key={member.id}>
-              <input checked={participantIds.includes(member.id)} className="mt-1 size-4 shrink-0 accent-cyan-300" onChange={(event) => void changeRelation("member", member.id, event.target.checked)} type="checkbox" />
+          {visibleMembers.length ? <div className="mt-4 grid min-w-0 max-h-72 gap-2 overflow-y-auto pr-1">
+            {visibleMembers.map((member) => <label className="flex min-h-12 items-start gap-3 rounded-xl border border-white/10 bg-[#020817]/30 p-3 text-sm" key={member.id}>
+              <input checked={participantIds.includes(member.id)} className="mt-0.5 size-5 shrink-0 accent-cyan-300" onChange={(event) => void changeRelation("member", member.id, event.target.checked)} type="checkbox" />
               <span className="min-w-0 break-words font-bold text-white">{member.name}{member.area ? <span className="mt-1 block font-normal text-acrux-muted">{member.area}</span> : null}</span>
             </label>)}
           </div> : <p className="mt-4 text-sm text-acrux-muted">{canManage ? "Cadastre integrantes na área Equipe para vinculá-los à competição." : "Nenhum participante vinculado."}</p>}
         </fieldset>
 
-        <div>
+        <div className="min-w-0">
           <h3 className="font-bold text-white">Álbuns da competição</h3>
           <p className="mt-2 text-sm leading-6 text-acrux-muted">Crie os álbuns e envie as fotos na <Link aria-disabled={locked} className="font-bold text-acrux-cyan-bright underline underline-offset-4" href="/admin/galeria" onClick={(event) => { if (locked) event.preventDefault(); }} tabIndex={locked ? -1 : undefined}>área Galeria</Link>. Cada álbum mantém sua própria configuração de publicação.</p>
           {assignedAlbums.length ? <ul className="mt-4 grid gap-2">
-            {assignedAlbums.map((album) => <li className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#020817]/30 p-3" key={album.id}>
+            {assignedAlbums.map((album) => <li className="flex min-w-0 flex-col items-stretch gap-3 rounded-xl border border-white/10 bg-[#020817]/30 p-3 sm:flex-row sm:items-center sm:justify-between" key={album.id}>
               <div className="min-w-0 flex-1"><p className="break-words text-sm font-bold text-white">{album.title}</p><p className="mt-1 text-xs text-acrux-muted">{album.is_published ? "Álbum publicado" : "Álbum em rascunho"}</p></div>
-              {canManage ? <button aria-label={`Desvincular álbum ${album.title}`} className="min-h-10 rounded-full border border-white/12 px-3 text-sm font-bold text-acrux-muted hover:text-white" disabled={locked} onClick={() => void changeRelation("album", album.id, false)} type="button">Desvincular</button> : null}
+              {canManage ? <button aria-label={`Desvincular álbum ${album.title}`} className="min-h-11 shrink-0 rounded-full border border-white/12 px-3 text-sm font-bold text-acrux-muted hover:text-white" disabled={locked} onClick={() => void changeRelation("album", album.id, false)} type="button">Desvincular</button> : null}
             </li>)}
           </ul> : <p className="mt-4 text-sm text-acrux-muted">Nenhum álbum vinculado.</p>}
-          {canManage ? <fieldset className="mt-5 grid gap-3" disabled={locked}>
-            <label className="grid gap-2 text-sm font-bold text-white" htmlFor="competition-album">Vincular um álbum existente
+          {canManage ? <fieldset className="mt-5 grid min-w-0 gap-3" disabled={locked}>
+            <label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="competition-album">Vincular um álbum existente
               <select className="admin-input min-w-0 w-full" id="competition-album" onChange={(event) => setAlbumId(event.target.value)} value={albumId}>
                 <option value="">Selecionar álbum</option>
                 {availableAlbums.map((album) => <option key={album.id} value={album.id}>{album.title}</option>)}
               </select>
             </label>
             <p className="text-xs leading-5 text-acrux-muted">Somente álbuns ainda não vinculados a outra competição aparecem aqui.</p>
-            <button className="button-secondary w-fit" disabled={!albumId || locked} onClick={() => void changeRelation("album", albumId, true)} type="button">Vincular álbum</button>
+            <button className="button-secondary w-full sm:w-fit" disabled={!albumId || locked} onClick={() => void changeRelation("album", albumId, true)} type="button">Vincular álbum</button>
           </fieldset> : null}
         </div>
       </div> : null}
       {error ? <div className="mt-6 rounded-2xl border border-red-300/22 bg-red-950/24 p-4">
         <p className="text-sm text-red-100" role="alert">{error}</p>
-        <button className="button-secondary mt-3 min-h-10 px-4" disabled={locked} onClick={() => setRetry((current) => current + 1)} type="button">Atualizar vínculos</button>
+        <button className="button-secondary mt-3 min-h-11 w-full px-4 sm:w-auto" disabled={locked} onClick={() => setRetry((current) => current + 1)} type="button">Atualizar vínculos</button>
       </div> : null}
       {feedback ? <p className="mt-6 rounded-2xl border border-cyan-200/18 bg-cyan-300/8 px-4 py-3 text-sm text-acrux-cyan-bright" role="status">{feedback}</p> : null}
     </section>

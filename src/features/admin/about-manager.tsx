@@ -144,42 +144,52 @@ export function AboutManager({ session }: { session: AdminSession }) {
   return <AdminWorkspace description="Edite a apresentação institucional, os marcos da trajetória e o bloco de parcerias. A logo oficial permanece inalterada." section="sobre" session={session} title="Editar página Sobre">
     {error ? <p className="mt-7 rounded-2xl border border-red-300/25 bg-red-950/25 p-4 text-sm text-red-100" role="alert">{error}</p> : null}
     {feedback ? <p className="mt-7 rounded-2xl border border-cyan-200/25 bg-cyan-300/8 p-4 text-sm text-acrux-cyan-bright" role="status">{feedback}</p> : null}
-    {loading ? <p className="mt-8 text-acrux-muted" aria-live="polite">Carregando conteúdo…</p> : loadFailed ? <p className="mt-6 text-sm text-acrux-muted">O formulário foi bloqueado para evitar sobrescrever conteúdo que não pôde ser carregado. Atualize a página após conferir a conexão.</p> : <form className="mt-9 grid gap-6" onSubmit={(event) => void save(event)}>
-      <section className="glass-panel rounded-3xl p-5 sm:p-7">
-        <h2 className="text-xl font-bold text-white">Apresentação na Home</h2>
+    {loading ? <p className="mt-8 text-acrux-muted" aria-live="polite">Carregando conteúdo…</p> : loadFailed ? <p className="mt-6 text-sm text-acrux-muted">O formulário foi bloqueado para evitar sobrescrever conteúdo que não pôde ser carregado. Atualize a página após conferir a conexão.</p> : <form className="mt-9 grid min-w-0 gap-6" onSubmit={(event) => void save(event)}>
+      <nav aria-label="Seções da edição da página Sobre" className="flex flex-wrap gap-2">
+        {[
+          ["about-home", "Home"],
+          ["about-introduction", "Apresentação"],
+          ["about-details", "Informações"],
+          ["about-milestones", "Trajetória"],
+          ["about-partners", "Parcerias"],
+          ["about-save", "Salvar"],
+        ].map(([id, label]) => <a className="flex min-h-11 items-center rounded-full border border-white/12 px-4 text-sm font-bold text-acrux-cyan-bright hover:border-cyan-200/35" href={`#${id}`} key={id}>{label}</a>)}
+      </nav>
+      <section aria-labelledby="about-home-title" className="glass-panel min-w-0 scroll-mt-24 rounded-3xl p-4 sm:p-7" id="about-home" tabIndex={-1}>
+        <h2 className="text-xl font-bold text-white" id="about-home-title">Apresentação na Home</h2>
         <p className="mt-2 text-sm text-acrux-muted">Edite o bloco “Constelação em movimento” da página inicial. Campos vazios exibem textos provisórios; só o conteúdo publicado aparece para visitantes.</p>
-        <div className="mt-5 grid gap-5 sm:grid-cols-2">
-          {homeFields.map((field) => <label className="grid gap-2 text-sm font-bold text-white" key={field.key}>{field.label}<textarea className="admin-input min-h-24 resize-y" maxLength={field.maxLength} onChange={(event) => updateField(field.key, event.target.value)} value={draft[field.key]} /></label>)}
+        <div className="mt-5 grid min-w-0 gap-5 sm:grid-cols-2">
+          {homeFields.map((field) => <label className="grid min-w-0 gap-2 text-sm font-bold text-white" key={field.key}>{field.label}<textarea className="admin-input min-h-24 resize-y" maxLength={field.maxLength} onChange={(event) => updateField(field.key, event.target.value)} value={draft[field.key]} /></label>)}
         </div>
       </section>
-      <section className="glass-panel rounded-3xl p-5 sm:p-7">
-        <h2 className="text-xl font-bold text-white">Apresentação</h2>
-        <div className="mt-5 grid gap-5">
-          <label className="grid gap-2 text-sm font-bold text-white">Título principal<input className="admin-input" maxLength={140} onChange={(event) => updateField("headline", event.target.value)} placeholder="Título da página Sobre" value={draft.headline} /></label>
-          <label className="grid gap-2 text-sm font-bold text-white">Texto de abertura<textarea className="admin-input min-h-30 resize-y" maxLength={1200} onChange={(event) => updateField("introduction", event.target.value)} placeholder="Apresente a história da ACRUX com informações oficiais" value={draft.introduction} /></label>
+      <section aria-labelledby="about-introduction-title" className="glass-panel min-w-0 scroll-mt-24 rounded-3xl p-4 sm:p-7" id="about-introduction" tabIndex={-1}>
+        <h2 className="text-xl font-bold text-white" id="about-introduction-title">Apresentação</h2>
+        <div className="mt-5 grid min-w-0 gap-5">
+          <label className="grid min-w-0 gap-2 text-sm font-bold text-white">Título principal<input className="admin-input" maxLength={140} onChange={(event) => updateField("headline", event.target.value)} placeholder="Título da página Sobre" value={draft.headline} /></label>
+          <label className="grid min-w-0 gap-2 text-sm font-bold text-white">Texto de abertura<textarea className="admin-input min-h-30 resize-y" maxLength={1200} onChange={(event) => updateField("introduction", event.target.value)} placeholder="Apresente a história da ACRUX com informações oficiais" value={draft.introduction} /></label>
         </div>
       </section>
 
-      <section className="glass-panel rounded-3xl p-5 sm:p-7">
-        <h2 className="text-xl font-bold text-white">Informações oficiais</h2>
+      <section aria-labelledby="about-details-title" className="glass-panel min-w-0 scroll-mt-24 rounded-3xl p-4 sm:p-7" id="about-details" tabIndex={-1}>
+        <h2 className="text-xl font-bold text-white" id="about-details-title">Informações oficiais</h2>
         <p className="mt-2 text-sm text-acrux-muted">Os campos vazios aparecem como “Em preparação” no site.</p>
-        <div className="mt-5 grid gap-5 sm:grid-cols-2">
-          {detailFields.map((field) => <label className="grid gap-2 text-sm font-bold text-white" key={field.key}>{field.label}<span className="text-xs font-normal text-acrux-muted">{field.hint}</span><textarea className="admin-input min-h-28 resize-y" maxLength={1400} onChange={(event) => updateField(field.key, event.target.value)} value={draft[field.key]} /></label>)}
+        <div className="mt-5 grid min-w-0 gap-5 sm:grid-cols-2">
+          {detailFields.map((field) => <label className="grid min-w-0 gap-2 text-sm font-bold text-white" key={field.key}>{field.label}<span className="text-xs font-normal text-acrux-muted">{field.hint}</span><textarea className="admin-input min-h-28 resize-y" maxLength={1400} onChange={(event) => updateField(field.key, event.target.value)} value={draft[field.key]} /></label>)}
         </div>
       </section>
 
-      <section className="glass-panel rounded-3xl p-5 sm:p-7">
-        <div className="flex flex-wrap items-center justify-between gap-4"><div><h2 className="text-xl font-bold text-white">Trajetória</h2><p className="mt-2 text-sm text-acrux-muted">Adicione até 12 marcos e ajuste a ordem de exibição.</p></div><button className="button-secondary" disabled={draft.milestones.length >= 12} onClick={() => setDraft((current) => ({ ...current, milestones: [...current.milestones, { title: "", description: "" }] }))} type="button">Adicionar marco</button></div>
+      <section aria-labelledby="about-milestones-title" className="glass-panel min-w-0 scroll-mt-24 rounded-3xl p-4 sm:p-7" id="about-milestones" tabIndex={-1}>
+        <div className="flex flex-wrap items-center justify-between gap-4"><div><h2 className="text-xl font-bold text-white" id="about-milestones-title">Trajetória</h2><p className="mt-2 text-sm text-acrux-muted">Adicione até 12 marcos e ajuste a ordem de exibição.</p></div><button className="button-secondary" disabled={draft.milestones.length >= 12} onClick={() => setDraft((current) => ({ ...current, milestones: [...current.milestones, { title: "", description: "" }] }))} type="button">Adicionar marco</button></div>
         {draft.milestones.length === 0 ? <p className="mt-5 text-sm text-acrux-muted">Nenhum marco cadastrado.</p> : null}
-        <div className="mt-5 grid gap-4">{draft.milestones.map((item, index) => <div className="rounded-2xl border border-white/10 bg-acrux-navy/40 p-4" key={index}>
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h3 className="font-bold text-white">Marco {String(index + 1).padStart(2, "0")}</h3><div className="flex gap-2"><button aria-label={`Mover marco ${index + 1} para cima`} className="button-secondary min-h-9 px-3" disabled={index === 0} onClick={() => moveMilestone(index, -1)} type="button">↑</button><button aria-label={`Mover marco ${index + 1} para baixo`} className="button-secondary min-h-9 px-3" disabled={index === draft.milestones.length - 1} onClick={() => moveMilestone(index, 1)} type="button">↓</button><button className="rounded-xl border border-red-200/25 px-3 py-2 text-sm font-bold text-red-100 hover:border-red-200/50" onClick={() => setDraft((current) => ({ ...current, milestones: current.milestones.filter((_, itemIndex) => itemIndex !== index) }))} type="button">Remover</button></div></div>
-          <div className="grid gap-4"><label className="grid gap-2 text-sm font-bold text-white">Título<input className="admin-input" maxLength={120} onChange={(event) => updateMilestone(index, "title", event.target.value)} value={item.title} /></label><label className="grid gap-2 text-sm font-bold text-white">Descrição<textarea className="admin-input min-h-24 resize-y" maxLength={1000} onChange={(event) => updateMilestone(index, "description", event.target.value)} value={item.description} /></label></div>
+        <div className="mt-5 grid min-w-0 gap-4">{draft.milestones.map((item, index) => <div className="rounded-2xl border border-white/10 bg-acrux-navy/40 p-4" key={index}>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h3 className="min-w-0 break-words font-bold text-white">Marco {String(index + 1).padStart(2, "0")}</h3><div className="flex flex-wrap gap-2"><button aria-label={`Mover marco ${index + 1} para cima`} className="button-secondary min-h-11 min-w-11 px-3" disabled={index === 0} onClick={() => moveMilestone(index, -1)} type="button">↑</button><button aria-label={`Mover marco ${index + 1} para baixo`} className="button-secondary min-h-11 min-w-11 px-3" disabled={index === draft.milestones.length - 1} onClick={() => moveMilestone(index, 1)} type="button">↓</button><button className="min-h-11 rounded-xl border border-red-200/25 px-3 py-2 text-sm font-bold text-red-100 hover:border-red-200/50" onClick={() => setDraft((current) => ({ ...current, milestones: current.milestones.filter((_, itemIndex) => itemIndex !== index) }))} type="button">Remover</button></div></div>
+          <div className="grid min-w-0 gap-4"><label className="grid min-w-0 gap-2 text-sm font-bold text-white">Título<input className="admin-input" maxLength={120} onChange={(event) => updateMilestone(index, "title", event.target.value)} value={item.title} /></label><label className="grid min-w-0 gap-2 text-sm font-bold text-white">Descrição<textarea className="admin-input min-h-24 resize-y" maxLength={1000} onChange={(event) => updateMilestone(index, "description", event.target.value)} value={item.description} /></label></div>
         </div>)}</div>
       </section>
 
-      <section className="glass-panel rounded-3xl p-5 sm:p-7"><h2 className="text-xl font-bold text-white">Parcerias</h2><div className="mt-5 grid gap-5"><label className="grid gap-2 text-sm font-bold text-white">Título<input className="admin-input" maxLength={140} onChange={(event) => updateField("partnersTitle", event.target.value)} value={draft.partnersTitle} /></label><label className="grid gap-2 text-sm font-bold text-white">Texto<textarea className="admin-input min-h-24 resize-y" maxLength={1200} onChange={(event) => updateField("partnersBody", event.target.value)} value={draft.partnersBody} /></label></div></section>
+      <section aria-labelledby="about-partners-title" className="glass-panel min-w-0 scroll-mt-24 rounded-3xl p-4 sm:p-7" id="about-partners" tabIndex={-1}><h2 className="text-xl font-bold text-white" id="about-partners-title">Parcerias</h2><div className="mt-5 grid min-w-0 gap-5"><label className="grid min-w-0 gap-2 text-sm font-bold text-white">Título<input className="admin-input" maxLength={140} onChange={(event) => updateField("partnersTitle", event.target.value)} value={draft.partnersTitle} /></label><label className="grid min-w-0 gap-2 text-sm font-bold text-white">Texto<textarea className="admin-input min-h-24 resize-y" maxLength={1200} onChange={(event) => updateField("partnersBody", event.target.value)} value={draft.partnersBody} /></label></div></section>
 
-      <div className="glass-panel flex flex-col gap-5 rounded-3xl p-5 sm:flex-row sm:items-center sm:justify-between sm:p-7"><label className="flex items-center gap-3 text-sm font-bold text-white"><input checked={draft.isPublished} onChange={(event) => setDraft((current) => ({ ...current, isPublished: event.target.checked }))} type="checkbox" />Publicar página no site</label><div className="flex flex-wrap items-center gap-3"><Link className="button-secondary" href="/sobre">Ver página</Link><button className="button-primary" disabled={saving || !canManage} type="submit">{saving ? "Salvando…" : "Salvar página Sobre"}</button></div></div>
+      <div aria-label="Publicação e salvamento" className="glass-panel min-w-0 flex scroll-mt-24 flex-col gap-5 rounded-3xl p-4 sm:flex-row sm:items-center sm:justify-between sm:p-7" id="about-save" tabIndex={-1}><label className="flex min-h-11 items-center gap-3 text-sm font-bold text-white"><input checked={draft.isPublished} onChange={(event) => setDraft((current) => ({ ...current, isPublished: event.target.checked }))} type="checkbox" />Publicar página no site</label><div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"><Link className="button-secondary w-full sm:w-auto" href="/sobre">Ver página</Link><button className="button-primary w-full sm:w-auto" disabled={saving || !canManage} type="submit">{saving ? "Salvando…" : "Salvar página Sobre"}</button></div></div>
     </form>}
   </AdminWorkspace>;
 }

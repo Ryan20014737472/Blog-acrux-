@@ -41,6 +41,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   colorScheme: "dark",
   themeColor: "#020817",
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
 };
 
 interface RootLayoutProps {
@@ -56,7 +58,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         </a>
         <div className="site-shell">
           <Header />
-          <div id="main-content">{children}</div>
+          <div id="main-content" tabIndex={-1}>{children}</div>
           <Footer />
         </div>
       </body>

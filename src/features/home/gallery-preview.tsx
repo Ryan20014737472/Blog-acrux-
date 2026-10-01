@@ -39,10 +39,10 @@ export function GalleryPreviewCards() {
   return <div className="mt-10 grid auto-rows-[8rem] grid-cols-2 gap-3 sm:grid-cols-4 sm:auto-rows-[10rem]">
     {galleries.map((gallery, index) => {
       const cover = client ? getPublicImageUrl(client, "gallery", gallery.cover_path) : null;
-      return <Link aria-label={`Abrir galeria: ${gallery.title}`} className={`${shapes[index] ?? ""} block h-full focus-visible:rounded-xl`} href="/galeria" key={gallery.id}>
+      return <Link aria-label={`Abrir galeria: ${gallery.title}`} className={`${shapes[index] ?? ""} block h-full min-w-0 focus-visible:rounded-xl`} href="/galeria" key={gallery.id}>
         <div className="group relative h-full overflow-hidden rounded-xl">
-          {cover ? <Image alt="" className="h-full w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105" fill loading="lazy" sizes="(min-width: 640px) 50vw, 100vw" src={cover} unoptimized /> : <PlaceholderMedia className="h-full min-h-0" label={`Capa de ${gallery.title} pendente`} />}
-          <span className="absolute bottom-3 left-3 rounded-full bg-acrux-navy/85 px-3 py-1 text-xs font-bold text-white">{gallery.title}</span>
+          {cover ? <Image alt="" className="h-full w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105" fill loading="lazy" sizes="(min-width: 640px) 50vw, 100vw" src={cover} unoptimized /> : <PlaceholderMedia className="h-full min-h-0 px-3" label={`Capa de ${gallery.title} pendente`} />}
+          <span className="absolute bottom-3 left-3 right-3 line-clamp-3 break-words rounded-xl bg-acrux-navy/85 px-3 py-1 text-xs font-bold text-white">{gallery.title}</span>
         </div>
       </Link>;
     })}

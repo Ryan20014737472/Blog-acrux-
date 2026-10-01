@@ -54,7 +54,7 @@ export function Hero() {
   return (
     <section
       aria-labelledby="hero-title"
-      className="relative isolate flex min-h-[44rem] items-center overflow-hidden pt-24 sm:min-h-[47rem]"
+      className="relative isolate flex min-h-[40rem] items-center overflow-hidden pt-22 sm:min-h-[47rem] sm:pt-24"
       ref={scope}
     >
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-20 overflow-hidden">
@@ -63,14 +63,14 @@ export function Hero() {
         <div className="hero-orbit absolute left-1/2 top-[16%] h-[23rem] w-[23rem] -translate-x-1/2 rounded-full border border-cyan-200/7 sm:h-[30rem] sm:w-[30rem]" />
       </div>
 
-      <div className="shell relative z-10 grid items-center gap-8 pb-16 pt-6 text-center sm:pb-20 lg:grid-cols-2 lg:gap-16 lg:pt-12 lg:text-left">
-        <div className="relative mx-auto w-[min(68vw,16rem)] lg:order-2 lg:w-full lg:max-w-[27rem]">
+      <div className="shell relative z-10 grid items-center gap-6 pb-12 pt-6 text-center sm:gap-8 sm:pb-20 lg:grid-cols-2 lg:gap-16 lg:pt-12 lg:text-left">
+        <div className="relative mx-auto w-[min(54vw,13rem)] sm:w-[min(68vw,16rem)] lg:order-2 lg:w-full lg:max-w-[27rem]">
           <div aria-hidden="true" className="pointer-events-none absolute inset-[12%] rounded-full bg-acrux-cyan/10 blur-3xl" />
           <div className="pointer-events-none relative">
             <HeroConstellation />
           </div>
           <motion.div
-            className="hero-logo absolute right-0 top-0 w-20 lg:w-28"
+            className="hero-logo absolute right-0 top-0 w-16 sm:w-20 lg:w-28"
             whileHover={reduceMotion ? undefined : { scale: 1.04 }}
             transition={{ duration: 0.2 }}
           >
@@ -81,7 +81,7 @@ export function Hero() {
                 className="aspect-square h-auto w-full object-cover"
                 height={112}
                 priority
-                sizes="(min-width: 1024px) 112px, 80px"
+                sizes="(min-width: 1024px) 112px, (min-width: 640px) 80px, 64px"
                 src={acruxLogo}
                 width={112}
               />
@@ -89,7 +89,7 @@ export function Hero() {
           </motion.div>
         </div>
 
-        <div className="lg:order-1">
+        <div className="min-w-0 lg:order-1">
           <div>
             <p className="hero-copy text-sm font-bold tracking-[0.34em] text-acrux-cyan-bright sm:text-base">ACRUX</p>
             <h1 className="hero-copy mt-2 text-5xl font-black tracking-[-0.08em] text-white sm:text-7xl" id="hero-title">
@@ -97,8 +97,8 @@ export function Hero() {
             </h1>
           </div>
 
-          <p className="hero-copy mt-6 text-base font-semibold tracking-[0.06em] text-acrux-muted sm:text-lg">
-            Tecnologia <span aria-hidden="true">•</span> Engenharia <span aria-hidden="true">•</span> Inovação
+          <p className="hero-copy mt-5 flex flex-wrap justify-center gap-x-3 gap-y-1 text-sm font-semibold tracking-[0.04em] text-acrux-muted sm:mt-6 sm:text-lg lg:justify-start">
+            <span>Tecnologia</span><span aria-hidden="true">•</span><span>Engenharia</span><span aria-hidden="true">•</span><span>Inovação</span>
           </p>
           <p className="hero-copy mx-auto mt-4 max-w-xl text-base leading-7 text-white/72 lg:mx-0">
             O espaço oficial para acompanhar a jornada da equipe, seus robôs, projetos e histórias.
@@ -115,7 +115,7 @@ export function Hero() {
 
           <a
             aria-label="Ir para a apresentação da ACRUX"
-            className="hero-copy mt-12 inline-flex flex-col items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-acrux-muted transition-colors hover:text-white"
+            className="hero-copy mt-8 inline-flex min-h-11 flex-col items-center gap-2 py-2 text-xs font-bold uppercase tracking-[0.16em] text-acrux-muted transition-colors hover:text-white sm:mt-12"
             href="#sobre-acrux"
           >
             Explorar

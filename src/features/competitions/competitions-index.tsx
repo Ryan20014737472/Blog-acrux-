@@ -107,8 +107,8 @@ export function CompetitionsIndex() {
                 <button
                   aria-pressed={organization === value}
                   className={organization === value
-                    ? "rounded-full border border-cyan-200/36 bg-cyan-300/13 px-3 py-2 text-sm font-bold text-acrux-cyan-bright"
-                    : "rounded-full border border-white/12 bg-white/3 px-3 py-2 text-sm font-bold text-acrux-muted transition-colors hover:border-cyan-200/28 hover:text-white"}
+                    ? "min-h-11 max-w-full break-words rounded-full border border-cyan-200/36 bg-cyan-300/13 px-4 py-2 text-sm font-bold text-acrux-cyan-bright"
+                    : "min-h-11 max-w-full break-words rounded-full border border-white/12 bg-white/3 px-4 py-2 text-sm font-bold text-acrux-muted transition-colors hover:border-cyan-200/28 hover:text-white"}
                   key={value === null ? "all-organizations" : `organization-${value}`}
                   onClick={() => setOrganization(value)}
                   type="button"
@@ -182,7 +182,7 @@ export function CompetitionsIndex() {
                   ) : null}
                   {competition.report ? (
                     <details className="mt-6 border-t border-white/10 pt-5">
-                      <summary className="cursor-pointer text-sm font-bold text-acrux-cyan-bright">Relato da participação</summary>
+                      <summary className="min-h-11 cursor-pointer py-2 text-sm font-bold text-acrux-cyan-bright">Relato da participação</summary>
                       <div className="mt-4 whitespace-pre-wrap text-sm leading-7 text-acrux-muted">{competition.report}</div>
                     </details>
                   ) : null}

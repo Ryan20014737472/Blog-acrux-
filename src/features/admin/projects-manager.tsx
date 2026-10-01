@@ -13,9 +13,12 @@ import type { SeasonOption } from "@/features/admin/competition-form-model";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getPublicImageUrl, uploadPublicImage, validateImageFile } from "@/lib/supabase/storage";
 import { slugify } from "@/lib/content/slug";
+import { focusAdminEditor } from "@/utils/focus-admin-editor";
 
 export function ProjectsManager({ session }: { session: AdminSession }) {
   const confirm = useAdminConfirm();
+  const listRef = useRef<HTMLElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
   const [rows, setRows] = useState<ProjectRow[]>([]);
   const [seasons, setSeasons] = useState<SeasonOption[]>([]);
   const [selected, setSelected] = useState<ProjectRow | null>(null);
@@ -93,6 +96,7 @@ export function ProjectsManager({ session }: { session: AdminSession }) {
     if (busy || (dirty && !await confirm({ title: "Descartar alterações?", description: "As alterações não salvas deste projeto serão perdidas.", confirmLabel: "Descartar alterações", tone: "danger" }))) return;
     const next = row ? projectToDraft(row) : emptyProject();
     setSelected(row); setDraft(next); setBaseline(JSON.stringify(next)); setFile(null); setError(""); setMessage("");
+    focusAdminEditor(editorRef.current);
   }
   function change(next: ProjectDraft) { setDraft(next); setMessage(""); }
   function chooseFile(next: File | null) {
@@ -154,11 +158,11 @@ export function ProjectsManager({ session }: { session: AdminSession }) {
   const normalized = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const visible = rows.filter((row) => normalized(`${row.title} ${row.category} ${row.description ?? ""}`).includes(normalized(search.trim())) && (!category || row.category === category) && (status === "all" || row.is_published === (status === "published")));
   return <AdminWorkspace section="projetos" session={session} title="Gerenciar projetos" description="Organize os projetos da ACRUX, suas capas, categorias e conteúdos.">
-    <Link className="button-secondary mt-6" href="/projetos" target="_blank" rel="noopener noreferrer">Ver projetos no site ↗</Link>
+    <Link className="button-secondary mt-6 w-full sm:w-auto" href="/projetos" target="_blank" rel="noopener noreferrer">Ver projetos no site ↗</Link>
     <div className="mt-8 grid min-w-0 gap-6 xl:grid-cols-[0.7fr_1.3fr]">
-      <aside className="glass-panel h-fit min-w-0 rounded-3xl p-5 sm:p-6">
+      <aside ref={listRef} tabIndex={-1} aria-label="Lista de projetos" className="glass-panel h-fit min-w-0 scroll-mt-28 rounded-3xl p-4 outline-none sm:p-6">
         <h2 className="text-xl font-bold">Projetos cadastrados</h2>
-        {canManage ? <button type="button" className="button-secondary mt-4" disabled={busy || loading || !!loadError} onClick={() => select(null)}>Novo projeto</button> : <p className="mt-3 text-sm text-acrux-muted">Acesso de leitura. Selecione um projeto para consultar.</p>}
+        {canManage ? <button type="button" className="button-secondary mt-4 w-full sm:w-auto" disabled={busy || loading || !!loadError} onClick={() => select(null)}>Novo projeto</button> : <p className="mt-3 text-sm text-acrux-muted">Acesso de leitura. Selecione um projeto para consultar.</p>}
         <label className="mt-5 grid gap-2 text-sm font-bold">Buscar projeto<input className="admin-input" type="search" value={search} onChange={(event) => setSearch(event.target.value)} /></label>
         <label className="mt-4 grid gap-2 text-sm font-bold">Status<select className="admin-input" value={status} onChange={(event) => setStatus(event.target.value)}><option value="all">Todos</option><option value="draft">Rascunhos</option><option value="published">Publicados</option></select></label>
         <label className="mt-4 grid gap-2 text-sm font-bold">Categoria<select className="admin-input" value={category} onChange={(event) => setCategory(event.target.value)}><option value="">Todas</option>{Array.from(new Set(rows.map((row) => row.category))).sort().map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
@@ -166,9 +170,10 @@ export function ProjectsManager({ session }: { session: AdminSession }) {
         {loadError ? <p role="alert" className="mt-3 text-red-100">{loadError}</p> : null}
         <p role="status" className="mt-3 text-sm text-acrux-muted">{loading ? "Carregando…" : `${visible.length} projeto(s) encontrado(s)`}</p>
         {!loading && !loadError && !visible.length ? <p className="mt-4 text-sm text-acrux-muted">{rows.length ? "Nenhum projeto corresponde aos filtros." : "Nenhum projeto cadastrado ainda."}</p> : null}
-        <div className="mt-4 grid gap-3">{visible.map((row) => <button type="button" aria-pressed={selected?.id === row.id} disabled={busy || loading} key={row.id} onClick={() => select(row)} className={`min-w-0 rounded-2xl border p-4 text-left ${selected?.id === row.id ? "border-cyan-200/40 bg-cyan-300/10" : "border-white/10"}`}><span className="block break-words font-bold">{row.title}</span><span className="mt-2 block text-xs text-acrux-cyan-bright">{row.is_published ? "Publicado" : "Rascunho"}</span></button>)}</div>
+        <div className="mt-4 grid max-h-[min(24rem,60svh)] gap-3 overflow-y-auto pr-1 xl:max-h-[40rem]">{visible.map((row) => <button type="button" aria-pressed={selected?.id === row.id} disabled={busy || loading} key={row.id} onClick={() => select(row)} className={`min-w-0 rounded-2xl border p-4 text-left ${selected?.id === row.id ? "border-cyan-200/40 bg-cyan-300/10" : "border-white/10"}`}><span className="block break-words font-bold">{row.title}</span><span className="mt-2 block text-xs text-acrux-cyan-bright">{row.is_published ? "Publicado" : "Rascunho"}</span></button>)}</div>
       </aside>
-      <div className="grid min-w-0 content-start gap-6">
+      <div ref={editorRef} role="region" tabIndex={-1} aria-label="Editor de projeto" className="grid min-w-0 scroll-mt-28 content-start gap-6 outline-none">
+        {canManage || selected ? <button className="button-secondary w-full xl:hidden" type="button" onClick={() => focusAdminEditor(listRef.current)}>↑ Voltar à lista de projetos</button> : null}
         {canManage || selected ? <><ProjectForm draft={draft} original={selected} seasons={seasons} disabled={busy || loading || !!loadError} readOnly={!canManage} onChange={change} onTitleChange={(title) => change({ ...draft, title, slug: !selected && draft.slug === slugify(draft.title) ? slugify(title) : draft.slug })} onFile={chooseFile} onRemovePhoto={() => { setFile(null); change({ ...draft, coverPath: null }); }} onSubmit={save} onDelete={() => void remove()} error={error} message={message}>
           {preview ? <Image src={preview} alt={`Foto do projeto ${draft.title || "em edição"}`} width={800} height={600} unoptimized className="mt-4 max-h-72 w-full rounded-xl bg-acrux-navy object-contain" /> : null}
         </ProjectForm>{selected ? <ProjectRelations projectId={selected.id} canManage={canManage} disabled={saving} onBusyChange={setRelationsBusy} key={selected.id} /> : <p className="text-sm text-acrux-muted">Salve o projeto para vincular os integrantes responsáveis.</p>}</> : null}

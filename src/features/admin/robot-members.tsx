@@ -48,11 +48,11 @@ export function RobotMembers({ robotId, canManage, disabled, onBusy }: { robotId
     finally { lock.current = false; if (active.current) { setBusy(false); onBusy(false); } }
   }
   const visible = canManage ? members : members.filter((member) => ids.includes(member.id));
-  return <section className="glass-panel min-w-0 rounded-3xl p-5 sm:p-7" aria-busy={busy || loading}>
+  return <section className="glass-panel min-w-0 rounded-3xl p-4 sm:p-7" aria-busy={busy || loading}>
     <h2 className="text-xl font-bold">Equipe envolvida</h2><p className="mt-2 text-sm text-acrux-muted">Os vínculos são salvos imediatamente, separadamente do formulário.</p>
     {loading ? <p role="status" className="mt-4">Carregando integrantes…</p> : null}
     {error ? <p role="alert" className="mt-4 text-sm text-red-100">{error}</p> : null}
-    <fieldset className="mt-4 grid max-h-80 gap-2 overflow-y-auto" disabled={!canManage || busy || disabled || loading || !!error}><legend className="sr-only">Integrantes responsáveis</legend>{visible.map((member) => <label className="flex items-start gap-3 rounded-xl border border-white/10 p-3 text-sm" key={member.id}><input className="mt-1" type="checkbox" checked={ids.includes(member.id)} onChange={(event) => void toggle(member.id, event.target.checked)} /><span className="min-w-0 break-words">{member.name}<span className="block text-acrux-muted">{member.area}</span></span></label>)}</fieldset>
+    <fieldset className="mt-4 grid min-w-0 max-h-80 gap-2 overflow-y-auto pr-1" disabled={!canManage || busy || disabled || loading || !!error}><legend className="sr-only">Integrantes responsáveis</legend>{visible.map((member) => <label className="flex min-h-12 items-start gap-3 rounded-xl border border-white/10 p-3 text-sm" key={member.id}><input className="mt-0.5 size-5 shrink-0 accent-cyan-300" type="checkbox" checked={ids.includes(member.id)} onChange={(event) => void toggle(member.id, event.target.checked)} /><span className="min-w-0 break-words">{member.name}<span className="block text-acrux-muted">{member.area}</span></span></label>)}</fieldset>
     {!loading && !error && !visible.length ? <p className="mt-4 text-sm text-acrux-muted">{canManage ? "Cadastre integrantes na área Equipe para vinculá-los." : "Nenhum integrante vinculado."}</p> : null}
     <button type="button" className="mt-3 min-h-11 text-sm text-acrux-cyan-bright" disabled={busy || disabled || loading} onClick={() => setAttempt((value) => value + 1)}>Atualizar vínculos</button>
     {message ? <p role="status" className="mt-3 text-sm text-acrux-cyan-bright">{message}</p> : null}

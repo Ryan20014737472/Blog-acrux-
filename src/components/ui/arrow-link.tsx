@@ -25,17 +25,18 @@ export function ArrowLink({
       ? "button-primary"
       : variant === "secondary"
         ? "button-secondary"
-        : "group inline-flex items-center gap-2 text-sm font-bold text-acrux-cyan-bright transition-colors hover:text-acrux-white";
+        : "group inline-flex min-h-11 max-w-full items-center gap-2 py-2 text-sm font-bold text-acrux-cyan-bright transition-colors hover:text-acrux-white";
 
   return (
     <motion.div
-      className="inline-flex"
+      className={cn("min-w-0 max-w-full", variant === "text" ? "inline-flex" : "flex w-full sm:inline-flex sm:w-auto")}
+      tabIndex={-1}
       whileHover={reduceMotion ? undefined : { x: variant === "text" ? 3 : 0 }}
       whileTap={reduceMotion ? undefined : { scale: 0.98 }}
     >
-      <Link className={cn(variantClass, className)} href={href}>
-        <span>{children}</span>
-        <span aria-hidden="true" className="text-base leading-none">
+      <Link className={cn(variantClass, variant !== "text" && "w-full sm:w-auto", className)} href={href}>
+        <span className="min-w-0 break-words">{children}</span>
+        <span aria-hidden="true" className="shrink-0 text-base leading-none">
           →
         </span>
       </Link>

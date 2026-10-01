@@ -123,27 +123,27 @@ export function UsersManager({ session }: { session: AdminSession }) {
   }
   const rows = result?.users.filter((user) => (!filter || user.role === filter) && `${user.email} ${user.displayName}`.toLocaleLowerCase("pt-BR").includes(search.toLocaleLowerCase("pt-BR"))) ?? [];
   return <AdminWorkspace session={session} section="usuarios" title="Gerenciar usuários" description="Convide pessoas autorizadas e controle quem pode editar o site. Senhas são definidas pela própria pessoa; nunca aparecem neste painel.">
-    <section className="glass-panel mt-8 rounded-2xl p-5 sm:p-7" aria-labelledby="invite-title">
+    <section className="glass-panel mt-8 min-w-0 rounded-2xl p-4 sm:p-7" aria-labelledby="invite-title">
       <h2 id="invite-title" className="text-xl font-bold">Convidar usuário</h2>
       <p className="mt-2 text-sm leading-6 text-acrux-muted">Editor: acesso limitado de edição. Administrador: gestão completa, inclusive de usuários. Sem acesso: apenas navegação pública.</p>
-      <form onSubmit={invite} className="mt-5 grid gap-4 md:grid-cols-[1fr_220px_auto] md:items-end">
-        <label className="grid gap-2 text-sm font-bold">E-mail<input className={userField} name="inviteEmail" type="email" autoComplete="email" spellCheck={false} required maxLength={254} value={email} disabled={busy || loading} onChange={(event) => setEmail(event.target.value)} /></label>
-        <label className="grid gap-2 text-sm font-bold">Acesso<select className={userField} name="inviteRole" value={inviteRole} disabled={busy || loading} onChange={(event) => setInviteRole(event.target.value)}><option value="editor">Editor</option><option value="admin">Administrador</option></select></label>
-        <button type="submit" className="button-primary" disabled={busy || loading || !result}>{busy ? "Processando…" : "Enviar convite"}</button>
+      <form onSubmit={invite} className="mt-5 grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_220px_auto] lg:items-end">
+        <label className="grid min-w-0 gap-2 text-sm font-bold">E-mail<input className={userField} name="inviteEmail" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} required maxLength={254} value={email} disabled={busy || loading} onChange={(event) => setEmail(event.target.value)} /></label>
+        <label className="grid min-w-0 gap-2 text-sm font-bold">Acesso<select className={userField} name="inviteRole" value={inviteRole} disabled={busy || loading} onChange={(event) => setInviteRole(event.target.value)}><option value="editor">Editor</option><option value="admin">Administrador</option></select></label>
+        <button type="submit" className="button-primary sm:col-span-2 lg:col-span-1" disabled={busy || loading || !result}>{busy ? "Processando…" : "Enviar convite"}</button>
       </form>
     </section>
     <div className="mt-6" aria-live="polite" aria-atomic="true">
       {message && <p className="rounded-xl border border-cyan-200/25 bg-cyan-300/10 p-4 text-sm">{message}</p>}
       {error && <p role="alert" className="rounded-xl border border-red-200/25 bg-red-950/30 p-4 text-sm text-red-100">{error}</p>}
     </div>
-    <section className="mt-8" aria-labelledby="users-title" aria-busy={loading || busy}>
+    <section className="mt-8 min-w-0" aria-labelledby="users-title" aria-busy={loading || busy}>
       <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="users-title" className="text-2xl font-bold">Contas cadastradas</h2><button className="button-secondary" disabled={busy || loading} onClick={() => afterDiscard(() => { setError(""); void load(); })}>Atualizar lista</button></div>
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <label className="grid gap-2 text-sm font-bold">Buscar nesta página<input type="search" className={userField} name="userSearch" autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nome ou e-mail…" /></label>
-        <label className="grid gap-2 text-sm font-bold">Filtrar por acesso<select className={userField} name="roleFilter" value={filter} onChange={(event) => setFilter(event.target.value)}><option value="">Todos</option>{Object.entries(roleLabels).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
+      <div className="mt-5 grid min-w-0 gap-4 sm:grid-cols-2">
+        <label className="grid min-w-0 gap-2 text-sm font-bold">Buscar nesta página<input type="search" className={userField} name="userSearch" autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nome ou e-mail…" /></label>
+        <label className="grid min-w-0 gap-2 text-sm font-bold">Filtrar por acesso<select className={userField} name="roleFilter" value={filter} onChange={(event) => setFilter(event.target.value)}><option value="">Todos</option>{Object.entries(roleLabels).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
       </div>
       {loading ? <p className="py-8 text-acrux-muted">Carregando usuários…</p> : <div className="mt-5 grid gap-5 lg:grid-cols-2">
-        {result?.users.map((user) => <article hidden={!rows.some((row) => row.id === user.id)} key={`${user.id}:${user.updatedAt}:${listRevision}`} className="glass-panel min-w-0 rounded-2xl p-5">
+        {result?.users.map((user) => <article hidden={!rows.some((row) => row.id === user.id)} key={`${user.id}:${user.updatedAt}:${listRevision}`} className="glass-panel min-w-0 rounded-2xl p-4 sm:p-5">
           <div className="flex flex-wrap items-center gap-2"><h3 className="break-all font-bold">{user.email || "Conta sem e-mail"}</h3>{user.id === result?.actorId && <span className="text-xs text-acrux-cyan-bright">Você</span>}</div>
           <p className="mt-2 text-sm text-acrux-muted">{user.confirmedAt ? "E-mail confirmado" : "Aguardando confirmação"} · {roleLabels[user.role]}</p>
           <p className="mt-1 text-xs text-acrux-muted">Último acesso: {user.lastSignInAt ? new Date(user.lastSignInAt).toLocaleString("pt-BR") : "Ainda não registrado"}</p>
@@ -151,7 +151,7 @@ export function UsersManager({ session }: { session: AdminSession }) {
         </article>)}
         {result && !rows.length && <p className="py-6 text-acrux-muted">Nenhuma conta encontrada nesta página.</p>}
       </div>}
-      <div className="mt-6 flex flex-wrap items-center gap-4"><button className="button-secondary" disabled={page === 1 || busy || loading} onClick={() => afterDiscard(() => setPage((value) => value - 1))}>Anterior</button><span className="text-sm">Página {page} · até 50 contas</span><button className="button-secondary" disabled={!result?.hasMore || busy || loading} onClick={() => afterDiscard(() => setPage((value) => value + 1))}>Próxima</button></div>
+      <nav aria-label="Paginação de usuários" className="mt-6 grid grid-cols-2 items-center gap-3 sm:flex sm:flex-wrap sm:gap-4"><button className="button-secondary" disabled={page === 1 || busy || loading} onClick={() => afterDiscard(() => setPage((value) => value - 1))}>Anterior</button><span className="col-span-2 row-start-1 text-center text-sm sm:text-left" aria-live="polite">Página {page} · até 50 contas</span><button className="button-secondary" disabled={!result?.hasMore || busy || loading} onClick={() => afterDiscard(() => setPage((value) => value + 1))}>Próxima</button></nav>
       <p className="mt-5 text-xs leading-6 text-acrux-muted">“Sem acesso ao painel” mantém a conta. “Remover usuário” apaga a conta de acesso e invalida convites pendentes; um novo convite será necessário para adicioná-la outra vez. Administradores não podem ser removidos por esta tela.</p>
     </section>
     <ConfirmationDialog request={confirmation} busy={confirmBusy} onCancel={() => setConfirmation(null)} onConfirm={() => void confirmAction()} />
