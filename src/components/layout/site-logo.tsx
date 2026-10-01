@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { MouseEventHandler } from "react";
 
 import acruxLogo from "@/assets/acrux-logo.jpeg";
 import { cn } from "@/utils/cn";
@@ -8,20 +9,23 @@ interface SiteLogoProps {
   compact?: boolean;
   className?: string;
   priority?: boolean;
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
 }
 
 export function SiteLogo({
   compact = false,
   className,
   priority = false,
+  onClick,
 }: SiteLogoProps) {
   const imageSize = compact ? 38 : 64;
 
   return (
     <Link
       aria-label="ACRUX ROBOCEP — página inicial"
-      className={cn("group inline-flex items-center gap-2.5", className)}
+      className={cn("group inline-flex min-h-11 min-w-0 items-center gap-2.5 rounded-lg", className)}
       href="/"
+      onClick={onClick}
     >
       <span
         className={cn(

@@ -15,7 +15,7 @@ interface SectionLeadProps {
 function SectionLead({ eyebrow, title, description, href, action }: SectionLeadProps) {
   return (
     <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
-      <div>
+      <div className="min-w-0 md:flex-1">
         <p className="eyebrow">{eyebrow}</p>
         <h2 className="section-heading mt-4">{title}</h2>
         <p className="body-copy mt-5">{description}</p>
@@ -78,7 +78,7 @@ export function RobotsAndProjectsPreview() {
               <p className="mt-4 max-w-md text-sm leading-6 text-acrux-muted">
                 Nome, mecanismos, componentes, galeria, resultados e pessoas envolvidas serão cadastrados posteriormente.
               </p>
-              <div className="mt-7 grid grid-cols-2 gap-3">
+              <div className="mt-7 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-white/10 bg-[#020817]/48 p-4 text-sm text-acrux-muted">Modelos 3D: preparado para futura integração</div>
                 <div className="rounded-xl border border-white/10 bg-[#020817]/48 p-4 text-sm text-acrux-muted">Galeria e detalhes por robô</div>
               </div>

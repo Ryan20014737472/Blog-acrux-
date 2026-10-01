@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import type { ChangeEvent, FormEvent } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
 import { useAdminConfirm } from "@/components/admin/admin-confirmation-provider";
@@ -13,6 +13,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getPublicImageUrl, uploadPublicImage, validateImageFile } from "@/lib/supabase/storage";
 import type { PublicationStatus } from "@/types/content";
 import type { Database } from "@/types/database";
+import { focusAdminEditor } from "@/utils/focus-admin-editor";
 
 type PostRow = Database["public"]["Tables"]["posts"]["Row"];
 type CategoryRow = Database["public"]["Tables"]["categories"]["Row"];
@@ -88,6 +89,8 @@ interface BlogManagerProps {
 }
 
 export function BlogManager({ session }: BlogManagerProps) {
+  const listRef = useRef<HTMLElement>(null);
+  const editorRef = useRef<HTMLFormElement>(null);
   const confirm = useAdminConfirm();
   const [posts, setPosts] = useState<ManagedPost[]>([]);
   const [categories, setCategories] = useState<CategoryRow[]>([]);
@@ -375,28 +378,29 @@ export function BlogManager({ session }: BlogManagerProps) {
       session={session}
       title="Gerenciar blog"
     >
-      <div className="mt-10 grid gap-6 xl:grid-cols-[0.78fr_1.22fr]">
-        <aside className="glass-panel h-fit rounded-3xl p-5 sm:p-6">
-          <div className="flex items-center justify-between gap-3">
+      <div className="mt-8 grid min-w-0 gap-6 xl:grid-cols-[0.78fr_1.22fr]">
+        <aside aria-label="Lista de postagens" className="glass-panel min-w-0 h-fit scroll-mt-24 rounded-3xl p-4 sm:p-6" ref={listRef} tabIndex={-1}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-lg font-bold text-white">Postagens</p>
               <p className="mt-1 text-sm text-acrux-muted">{posts.length} registro(s)</p>
             </div>
-            <button className="button-secondary min-h-10 px-4" disabled={isBusy} onClick={() => { setDraft(emptyDraft); setError(null); setFeedback(null); }} type="button">Nova</button>
+            <button className="button-secondary min-h-11 px-4" disabled={isBusy} onClick={() => { setDraft(emptyDraft); setError(null); setFeedback(null); focusAdminEditor(editorRef.current); }} type="button">Nova</button>
           </div>
-          <div className="mt-5 grid gap-2">
+          <div aria-label="Postagens cadastradas" className="mt-5 grid min-w-0 gap-2 max-h-[36svh] overflow-y-auto overscroll-contain pr-1 xl:max-h-none xl:overflow-visible xl:pr-0" role="region" tabIndex={0}>
             {isLoading ? <p className="text-sm text-acrux-muted">Carregando postagens…</p> : null}
-            {!isLoading && posts.length === 0 ? <p className="rounded-2xl border border-dashed border-cyan-200/16 p-4 text-sm leading-6 text-acrux-muted">Ainda não há postagens. Crie a primeira ao lado.</p> : null}
+            {!isLoading && posts.length === 0 ? <p className="rounded-2xl border border-dashed border-cyan-200/16 p-4 text-sm leading-6 text-acrux-muted">Ainda não há postagens. Use o botão Nova para criar a primeira.</p> : null}
             {posts.map((post) => (
               <button
+                aria-current={draft.id === post.id ? "true" : undefined}
                 className={draft.id === post.id ? "rounded-2xl border border-cyan-200/32 bg-cyan-300/9 p-4 text-left" : "rounded-2xl border border-white/8 bg-[#020817]/30 p-4 text-left transition-colors hover:border-cyan-200/22"}
                 key={post.id}
                 disabled={isBusy}
-                onClick={() => { setDraft(toDraft(post)); setError(null); setFeedback(null); }}
+                onClick={() => { setDraft(toDraft(post)); setError(null); setFeedback(null); focusAdminEditor(editorRef.current); }}
                 type="button"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <p className="font-bold text-white">{post.title}</p>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <p className="min-w-0 break-words font-bold text-white">{post.title}</p>
                   <span className="shrink-0 text-xs font-bold text-acrux-cyan-bright">{statusLabel(post.status)}</span>
                 </div>
                 <p className="mt-2 line-clamp-2 text-sm leading-5 text-acrux-muted">{post.excerpt}</p>
@@ -405,43 +409,44 @@ export function BlogManager({ session }: BlogManagerProps) {
           </div>
         </aside>
 
-        <form className="glass-panel rounded-3xl p-5 sm:p-7" onSubmit={savePost}>
+        <form aria-labelledby="blog-editor-title" className="glass-panel min-w-0 rounded-3xl p-4 sm:p-7 scroll-mt-24" onSubmit={savePost} ref={editorRef} tabIndex={-1}>
+        <button className="mb-4 flex min-h-11 items-center rounded-xl border border-white/12 px-4 text-sm font-bold text-acrux-cyan-bright xl:hidden" onClick={() => focusAdminEditor(listRef.current, 1280)} type="button">Voltar à lista</button>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-lg font-bold text-white">{draft.id ? "Editar postagem" : "Nova postagem"}</p>
+              <h2 className="text-lg font-bold text-white" id="blog-editor-title">{draft.id ? "Editar postagem" : "Nova postagem"}</h2>
               <p className="mt-1 text-sm text-acrux-muted">Campos com conteúdo oficial só devem ser publicados após revisão da equipe.</p>
             </div>
-            {draft.id && session.role === "admin" ? <button className="rounded-full border border-red-200/20 px-4 py-2 text-sm font-bold text-red-100 transition-colors hover:border-red-200/50" disabled={isBusy} onClick={deletePost} type="button">Excluir</button> : null}
+            {draft.id && session.role === "admin" ? <button className="min-h-11 rounded-full border border-red-200/20 px-4 py-2 text-sm font-bold text-red-100 transition-colors hover:border-red-200/50" disabled={isBusy} onClick={deletePost} type="button">Excluir</button> : null}
           </div>
 
-          <div className="mt-7 grid gap-5">
+          <div className="mt-7 grid min-w-0 gap-5">
             {editorLocked ? <p className="rounded-2xl border border-cyan-200/18 bg-cyan-300/8 px-4 py-3 text-sm leading-6 text-acrux-muted">Esta postagem já está pública ou arquivada. Uma conta editora não pode alterá-la.</p> : null}
-            <label className="grid gap-2 text-sm font-bold text-white" htmlFor="post-title">
+            <label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="post-title">
               Título
               <input className="admin-input" id="post-title" onChange={(event) => updateTitle(event.target.value)} required value={draft.title} />
             </label>
-            <label className="grid gap-2 text-sm font-bold text-white" htmlFor="post-slug">
+            <label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="post-slug">
               Endereço do post
               <input className="admin-input" id="post-slug" onChange={(event) => setDraft((current) => ({ ...current, slug: slugify(event.target.value) }))} required value={draft.slug} />
             </label>
-            <label className="grid gap-2 text-sm font-bold text-white" htmlFor="post-excerpt">
+            <label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="post-excerpt">
               Resumo
               <textarea className="admin-input min-h-25 resize-y" id="post-excerpt" maxLength={280} onChange={(event) => setDraft((current) => ({ ...current, excerpt: event.target.value }))} required value={draft.excerpt} />
             </label>
-            <label className="grid gap-2 text-sm font-bold text-white" htmlFor="post-body">
+            <label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="post-body">
               Conteúdo
               <textarea className="admin-input min-h-55 resize-y" id="post-body" onChange={(event) => setDraft((current) => ({ ...current, body: event.target.value }))} required value={draft.body} />
             </label>
 
-            <div className="grid gap-3">
-              <label className="grid gap-2 text-sm font-bold text-white" htmlFor="post-images">
+            <div className="grid min-w-0 gap-3">
+              <label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="post-images">
                 Imagens da postagem
                 <input accept="image/avif,image/gif,image/jpeg,image/png,image/webp" aria-describedby="post-images-help" className="admin-file-input" disabled={isBusy || editorLocked} id="post-images" multiple onChange={uploadImages} type="file" />
               </label>
               <p className="text-sm text-acrux-muted" id="post-images-help">Selecione uma ou mais imagens (até 10 MB cada). A capa aparece nos cards; todas as imagens aparecem na leitura da postagem. Salve para aplicar as alterações.</p>
               {isUploading ? <p className="text-sm text-acrux-cyan-bright" role="status">Enviando imagens…</p> : null}
               {draft.imagePaths.length ? (
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid min-w-0 gap-4 sm:grid-cols-2">
                   {draft.imagePaths.map((path, index) => {
                     const imageUrl = browserClient ? getPublicImageUrl(browserClient, "blog", path) : null;
                     const isCover = path === draft.coverPath;
@@ -449,8 +454,8 @@ export function BlogManager({ session }: BlogManagerProps) {
                       <div className="rounded-2xl border border-white/10 p-3" key={path}>
                         {imageUrl ? <Image alt={`Prévia da imagem ${index + 1}`} className="aspect-[4/3] w-full rounded-xl object-contain" height={450} src={imageUrl} unoptimized width={600} /> : null}
                         <div className="mt-3 flex flex-wrap items-center gap-3">
-                          {isCover ? <span className="text-sm font-bold text-acrux-cyan-bright">Capa</span> : <button aria-label={`Usar imagem ${index + 1} como capa`} className="text-sm font-bold text-acrux-cyan-bright hover:text-white" disabled={isBusy || editorLocked} onClick={() => setDraft((current) => ({ ...current, coverPath: path }))} type="button">Usar como capa</button>}
-                          <button aria-label={`Remover imagem ${index + 1} da postagem`} className="ml-auto text-sm font-bold text-red-100 hover:text-white" disabled={isBusy || editorLocked} onClick={() => removeImage(path)} type="button">Remover</button>
+                          {isCover ? <span className="text-sm font-bold text-acrux-cyan-bright">Capa</span> : <button aria-label={`Usar imagem ${index + 1} como capa`} className="min-h-11 rounded-xl px-3 text-sm font-bold text-acrux-cyan-bright hover:bg-cyan-300/10 hover:text-white" disabled={isBusy || editorLocked} onClick={() => setDraft((current) => ({ ...current, coverPath: path }))} type="button">Usar como capa</button>}
+                          <button aria-label={`Remover imagem ${index + 1} da postagem`} className="ml-auto min-h-11 rounded-xl px-3 text-sm font-bold text-red-100 hover:bg-red-300/10 hover:text-white" disabled={isBusy || editorLocked} onClick={() => removeImage(path)} type="button">Remover</button>
                         </div>
                       </div>
                     );
@@ -459,19 +464,21 @@ export function BlogManager({ session }: BlogManagerProps) {
               ) : <p className="text-sm text-acrux-muted">Nenhuma imagem enviada.</p>}
             </div>
 
-            <label className="grid gap-2 text-sm font-bold text-white" htmlFor="post-tags">
+            <label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="post-tags">
               Tags
               <input className="admin-input" id="post-tags" onChange={(event) => setDraft((current) => ({ ...current, tags: event.target.value }))} placeholder="Ex.: robótica, bastidores, engenharia" value={draft.tags} />
             </label>
 
-            <div className="grid gap-3">
-              <p className="text-sm font-bold text-white">Categorias</p>
-              {categories.length ? <div className="flex flex-wrap gap-2">{categories.map((category) => <label className={draft.categoryIds.includes(category.id) ? "cursor-pointer rounded-full border border-cyan-200/32 bg-cyan-300/10 px-3 py-2 text-sm font-bold text-acrux-cyan-bright" : "cursor-pointer rounded-full border border-white/12 px-3 py-2 text-sm font-bold text-acrux-muted"} key={category.id}><input checked={draft.categoryIds.includes(category.id)} className="sr-only" onChange={() => toggleCategory(category.id)} type="checkbox" />{category.name}</label>)}</div> : <p className="text-sm text-acrux-muted">Nenhuma categoria cadastrada.</p>}
-              {canManageCategories ? <div className="flex flex-col gap-2 sm:flex-row"><input className="admin-input" onChange={(event) => setNewCategoryName(event.target.value)} placeholder="Nova categoria" value={newCategoryName} /><button className="button-secondary min-h-12 shrink-0" onClick={createCategory} type="button">Adicionar categoria</button></div> : null}
-            </div>
+            <details className="min-w-0 rounded-2xl border border-white/12 bg-[#020817]/28 p-3">
+              <summary className="min-h-11 cursor-pointer text-sm font-bold text-white marker:text-acrux-cyan-bright">Categorias <span className="font-normal text-acrux-muted">({draft.categoryIds.length} selecionadas)</span></summary>
+              <div className="mt-3 grid min-w-0 gap-3">
+              {categories.length ? <div className="flex flex-wrap gap-2">{categories.map((category) => <label className={draft.categoryIds.includes(category.id) ? "inline-flex min-h-11 max-w-full cursor-pointer items-center [overflow-wrap:anywhere] rounded-2xl border border-cyan-200/32 bg-cyan-300/10 px-3 py-2 text-sm font-bold text-acrux-cyan-bright focus-within:ring-2 focus-within:ring-cyan-200" : "inline-flex min-h-11 max-w-full cursor-pointer items-center [overflow-wrap:anywhere] rounded-2xl border border-white/12 px-3 py-2 text-sm font-bold text-acrux-muted focus-within:ring-2 focus-within:ring-cyan-200"} key={category.id}><input checked={draft.categoryIds.includes(category.id)} className="sr-only" onChange={() => toggleCategory(category.id)} type="checkbox" />{category.name}</label>)}</div> : <p className="text-sm text-acrux-muted">Nenhuma categoria cadastrada.</p>}
+              {canManageCategories ? <div className="flex flex-col gap-2 sm:flex-row"><input aria-label="Nome da nova categoria" className="admin-input min-w-0" onChange={(event) => setNewCategoryName(event.target.value)} placeholder="Nova categoria" value={newCategoryName} /><button className="button-secondary min-h-12 shrink-0" onClick={createCategory} type="button">Adicionar categoria</button></div> : null}
+              </div>
+            </details>
 
-            <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
-              <label className="grid gap-2 text-sm font-bold text-white" htmlFor="post-status">
+            <div className="grid min-w-0 gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
+              <label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="post-status">
                 Status
                 <select className="admin-input" id="post-status" onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value as PublicationStatus }))} value={draft.status}>
                   <option value="draft">Rascunho</option>
@@ -485,7 +492,7 @@ export function BlogManager({ session }: BlogManagerProps) {
 
           {error ? <p className="mt-6 rounded-2xl border border-red-300/22 bg-red-950/24 px-4 py-3 text-sm text-red-100" role="alert">{error}</p> : null}
           {feedback ? <p className="mt-6 rounded-2xl border border-cyan-200/18 bg-cyan-300/8 px-4 py-3 text-sm text-acrux-cyan-bright" role="status">{feedback}</p> : null}
-          <div className="mt-7 flex flex-wrap gap-3"><button className="button-primary" disabled={editorLocked || isSaving || isUploading} type="submit">{isSaving ? "Salvando…" : draft.id ? "Salvar alterações" : "Criar postagem"}</button>{draft.status === "published" && draft.publishedAt ? <p className="self-center text-sm text-acrux-muted">Publicada em {new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(new Date(draft.publishedAt))}</p> : null}</div>
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap"><button className="button-primary w-full sm:w-auto" disabled={editorLocked || isSaving || isUploading} type="submit">{isSaving ? "Salvando…" : draft.id ? "Salvar alterações" : "Criar postagem"}</button>{draft.status === "published" && draft.publishedAt ? <p className="self-center text-sm text-acrux-muted">Publicada em {new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(new Date(draft.publishedAt))}</p> : null}</div>
         </form>
       </div>
     </AdminWorkspace>

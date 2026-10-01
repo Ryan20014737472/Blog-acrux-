@@ -6,7 +6,7 @@ interface PlaceholderMediaProps {
 export function PlaceholderMedia({ label, className }: PlaceholderMediaProps) {
   return (
     <div aria-label={label} className={`placeholder-media ${className ?? ""}`} role="img">
-      <span>{label}</span>
+      <span className="max-w-full break-words">{label}</span>
     </div>
   );
 }

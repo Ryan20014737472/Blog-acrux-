@@ -5,7 +5,7 @@ import { SiteLogo } from "@/components/layout/site-logo";
 
 export function Footer() {
   return (
-    <footer className="border-t border-white/10 bg-[#020817]/70">
+    <footer className="border-t border-white/10 bg-[#020817]/70 pb-[env(safe-area-inset-bottom)]">
       <div className="shell grid gap-10 py-12 sm:grid-cols-[1.25fr_1fr] lg:grid-cols-[1.4fr_1fr_0.8fr]">
         <div>
           <SiteLogo />
@@ -16,10 +16,10 @@ export function Footer() {
 
         <div>
           <p className="text-sm font-bold uppercase tracking-[0.14em] text-white">Explorar</p>
-          <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
+          <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1">
             {publicNavigation.map((item) => (
               <li key={item.href}>
-                <Link className="text-sm text-acrux-muted transition-colors hover:text-acrux-cyan-bright" href={item.href}>
+                <Link className="flex min-h-11 items-center rounded-lg py-2 text-sm text-acrux-muted transition-colors hover:text-acrux-cyan-bright" href={item.href}>
                   {item.label}
                 </Link>
               </li>
@@ -32,7 +32,7 @@ export function Footer() {
           <p className="mt-4 text-sm leading-6 text-acrux-muted">
             A edição do conteúdo é reservada às contas autorizadas da ACRUX.
           </p>
-          <Link className="mt-4 inline-flex text-sm font-bold text-acrux-cyan-bright hover:text-white" href="/admin">
+          <Link className="mt-3 inline-flex min-h-11 max-w-full items-center rounded-lg py-2 text-sm font-bold leading-6 text-acrux-cyan-bright hover:text-white" href="/admin">
             Acessar administração →
           </Link>
         </div>

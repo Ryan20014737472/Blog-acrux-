@@ -52,10 +52,10 @@ function AdminSectionContent({ section, session }: AdminSectionProps & { session
 
   if (!canAccess) {
     return (
-      <main className="section pt-34" aria-live="polite">
+      <main className="admin-workspace section pt-24 sm:pt-34" aria-live="polite">
         <div className="shell max-w-3xl">
           <p className="eyebrow">Área administrativa</p>
-          <div className="glass-panel mt-6 rounded-3xl p-6 sm:p-8">
+          <div className="glass-panel mt-6 rounded-2xl p-4 sm:rounded-3xl sm:p-8">
             <p className="text-base leading-7 text-acrux-muted">Redirecionando para a área permitida…</p>
           </div>
         </div>
@@ -104,7 +104,7 @@ function AdminSectionContent({ section, session }: AdminSectionProps & { session
   }
 
   return (
-    <main className="section pt-34">
+    <main className="admin-workspace section pt-24 sm:pt-34">
       <div className="shell max-w-4xl">
         <p className="eyebrow">Administração</p>
         <h1 className="display-heading mt-5">{content.title}</h1>

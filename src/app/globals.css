@@ -67,6 +67,20 @@ button {
   touch-action: manipulation;
 }
 
+dialog:not([open]) {
+  display: none;
+}
+
+main :where(h1, h2, h3, h4, p, li),
+.admin-workspace :where(label, legend, [role="status"], [role="alert"]),
+.admin-auth :where(label, [role="status"], [role="alert"]) {
+  overflow-wrap: anywhere;
+}
+
+main :where([id], [tabindex="-1"]) {
+  scroll-margin-top: calc(6rem + env(safe-area-inset-top));
+}
+
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
@@ -106,7 +120,7 @@ textarea:focus-visible {
 }
 
 .shell {
-  width: min(100% - 2rem, 74rem);
+  width: min(calc(100% - max(1rem, env(safe-area-inset-left)) - max(1rem, env(safe-area-inset-right))), 74rem);
   margin-inline: auto;
 }
 
@@ -137,6 +151,7 @@ textarea:focus-visible {
   content: "";
   background: currentColor;
   box-shadow: 0 0 0.7rem currentColor;
+  flex-shrink: 0;
 }
 
 .display-heading {
@@ -211,6 +226,8 @@ textarea:focus-visible {
   font-size: 0.9375rem;
   font-weight: 700;
   line-height: 1;
+  max-width: 100%;
+  text-align: center;
   transition:
     transform 180ms ease,
     border-color 180ms ease,
@@ -252,6 +269,8 @@ textarea:focus-visible {
 
 .admin-input {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 3rem;
   border: 1px solid rgb(255 255 255 / 12%);
   border-radius: 0.75rem;
@@ -274,13 +293,15 @@ textarea:focus-visible {
 
 .admin-file-input {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 3rem;
   border: 1px dashed rgb(75 212 232 / 28%);
   border-radius: 0.75rem;
   background: rgb(2 8 23 / 40%);
   padding: 0.5rem;
   color: var(--acrux-muted);
-  font-size: 0.9375rem;
+  font-size: 1rem;
 }
 
 .admin-file-input::file-selector-button {
@@ -292,6 +313,23 @@ textarea:focus-visible {
   color: var(--acrux-cyan-bright);
   font: inherit;
   font-weight: 700;
+  min-height: 2.75rem;
+}
+
+.admin-workspace :where(fieldset, form),
+.admin-auth form {
+  min-width: 0;
+}
+
+.admin-workspace button:not(.button-primary):not(.button-secondary),
+.admin-auth button:not(.button-primary):not(.button-secondary) {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+}
+
+.admin-workspace label:has(input[type="checkbox"]),
+.admin-workspace label:has(input[type="radio"]) {
+  min-height: 2.75rem;
 }
 
 .status-dot {
@@ -377,7 +415,34 @@ textarea:focus-visible {
 
 @media (min-width: 48rem) {
   .shell {
-    width: min(100% - 3rem, 74rem);
+    width: min(calc(100% - max(1.5rem, env(safe-area-inset-left)) - max(1.5rem, env(safe-area-inset-right))), 74rem);
+  }
+}
+
+@media (max-width: 39.999rem) {
+  .section {
+    padding-block: 3.5rem;
+  }
+
+  .section-tight {
+    padding-block: 3rem;
+  }
+
+  main.section {
+    padding-top: calc(7rem + env(safe-area-inset-top));
+  }
+
+  .button-primary,
+  .button-secondary {
+    line-height: 1.3;
+  }
+}
+
+@media (hover: none) {
+  .card-hover:hover,
+  .button-primary:hover:not(:disabled),
+  .button-secondary:hover:not(:disabled) {
+    transform: none;
   }
 }
 

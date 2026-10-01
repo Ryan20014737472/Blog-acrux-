@@ -26,10 +26,10 @@ function isAdminRole(role: UserRole | null): role is AdminRole {
 
 function AdminLoadingState() {
   return (
-    <main className="section pt-34" aria-busy="true" aria-live="polite">
+    <main className="admin-workspace section pt-24 sm:pt-34" aria-busy="true" aria-live="polite">
       <div className="shell max-w-3xl">
         <p className="eyebrow">Área administrativa</p>
-        <div className="glass-panel mt-6 rounded-3xl p-6 sm:p-8">
+        <div className="glass-panel mt-6 rounded-2xl p-4 sm:rounded-3xl sm:p-8">
           <p className="text-base leading-7 text-acrux-muted">Verificando o acesso autorizado…</p>
         </div>
       </div>

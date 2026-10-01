@@ -52,20 +52,26 @@ export function PasswordRecoveryForm() {
   }
 
   return (
-    <form className="grid gap-5" onSubmit={handleSubmit}>
-      <label className="grid gap-2 text-sm font-bold text-white" htmlFor="recovery-email">
+    <form className="admin-auth grid min-w-0 gap-5" onSubmit={handleSubmit}>
+      <label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="recovery-email">
         E-mail autorizado
         <input
           autoComplete="email"
-          className="min-h-12 rounded-xl border border-white/12 bg-[#020817]/58 px-4 text-base font-normal text-white"
+          autoCapitalize="none"
+          autoCorrect="off"
+          className="min-h-12 min-w-0 w-full rounded-xl border border-white/12 bg-[#020817]/58 px-4 text-base font-normal text-white"
+          enterKeyHint="send"
           id="recovery-email"
+          inputMode="email"
+          name="email"
           onChange={(event) => setEmail(event.target.value)}
           required
+          spellCheck={false}
           type="email"
           value={email}
         />
       </label>
-      {error ? <p className="rounded-xl border border-red-300/22 bg-red-950/24 px-4 py-3 text-sm text-red-100" role="alert">{error}</p> : null}
+      {error ? <p className="break-words rounded-xl border border-red-300/22 bg-red-950/24 px-4 py-3 text-sm text-red-100" role="alert">{error}</p> : null}
       <button className="button-primary mt-1 w-full" disabled={isSubmitting} type="submit">
         {isSubmitting ? "Enviando…" : "Enviar link para definir senha"}
       </button>

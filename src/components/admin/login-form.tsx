@@ -57,31 +57,39 @@ export function LoginForm() {
 
   return (
     <motion.form
-      className="glass-panel rounded-3xl p-6 sm:p-8"
+      className="admin-auth glass-panel min-w-0 rounded-2xl p-4 sm:rounded-3xl sm:p-8"
       initial={reduceMotion ? false : { opacity: 0, y: 16 }}
       onSubmit={handleSubmit}
       transition={{ duration: reduceMotion ? 0 : 0.45, ease: [0.22, 1, 0.36, 1] }}
       whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
     >
       <div className="grid gap-5">
-        <label className="grid gap-2 text-sm font-bold text-white" htmlFor="email">
+        <label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="email">
           E-mail autorizado
           <input
             autoComplete="email"
-            className="min-h-12 rounded-xl border border-white/12 bg-[#020817]/58 px-4 text-base font-normal text-white"
+            autoCapitalize="none"
+            autoCorrect="off"
+            className="min-h-12 min-w-0 w-full rounded-xl border border-white/12 bg-[#020817]/58 px-4 text-base font-normal text-white"
+            enterKeyHint="next"
             id="email"
+            inputMode="email"
+            name="email"
             onChange={(event) => setEmail(event.target.value)}
             required
+            spellCheck={false}
             type="email"
             value={email}
           />
         </label>
-        <label className="grid gap-2 text-sm font-bold text-white" htmlFor="password">
+        <label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="password">
           Senha
           <input
             autoComplete="current-password"
-            className="min-h-12 rounded-xl border border-white/12 bg-[#020817]/58 px-4 text-base font-normal text-white"
+            className="min-h-12 min-w-0 w-full rounded-xl border border-white/12 bg-[#020817]/58 px-4 text-base font-normal text-white"
+            enterKeyHint="go"
             id="password"
+            name="password"
             onChange={(event) => setPassword(event.target.value)}
             required
             type="password"
@@ -89,12 +97,12 @@ export function LoginForm() {
           />
         </label>
       </div>
-      {error ? <p className="mt-4 rounded-xl border border-red-300/22 bg-red-950/24 px-4 py-3 text-sm text-red-100" role="alert">{error}</p> : null}
+      {error ? <p className="mt-4 break-words rounded-xl border border-red-300/22 bg-red-950/24 px-4 py-3 text-sm text-red-100" role="alert">{error}</p> : null}
       <button className="button-primary mt-6 w-full" disabled={isSubmitting} type="submit">
         {isSubmitting ? "Entrando…" : "Entrar na área administrativa"}
       </button>
       <div className="mt-4 grid gap-2 text-center text-xs leading-5 text-acrux-muted">
-        <Link className="font-bold text-acrux-cyan-bright hover:text-white" href="/admin/recuperar-senha">Esqueci minha senha</Link>
+        <Link className="flex min-h-11 items-center justify-center rounded-lg px-2 font-bold text-acrux-cyan-bright hover:text-white" href="/admin/recuperar-senha">Esqueci minha senha</Link>
         <p>Não há cadastro público de administradores. Solicite acesso à equipe responsável.</p>
       </div>
     </motion.form>

@@ -11,9 +11,12 @@ import { CompetitionRelations } from "@/features/admin/competition-relations";
 import { competitionError, competitionToDraft, emptyCompetitionDraft, parseCompetitionDraft, type CompetitionDraft, type CompetitionRow, type SeasonOption } from "@/features/admin/competition-form-model";
 import { slugify } from "@/lib/content/slug";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { focusAdminEditor } from "@/utils/focus-admin-editor";
 
 export function CompetitionsManager({ session }: { session: AdminSession }) {
   const confirm = useAdminConfirm();
+  const listRef = useRef<HTMLElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
   const [competitions, setCompetitions] = useState<CompetitionRow[]>([]);
   const [seasons, setSeasons] = useState<SeasonOption[]>([]);
   const [draft, setDraft] = useState(emptyCompetitionDraft);
@@ -104,6 +107,7 @@ export function CompetitionsManager({ session }: { session: AdminSession }) {
     setVersion(row?.updated_at ?? null);
     setError(null);
     setFeedback(null);
+    focusAdminEditor(editorRef.current);
   }
 
   function updateName(eventName: string) {
@@ -173,10 +177,10 @@ export function CompetitionsManager({ session }: { session: AdminSession }) {
 
   return (
     <AdminWorkspace description="Registre participações oficiais, organize resultados e escolha o que publicar no site." section="competicoes" session={session} title="Gerenciar competições">
-      <div className="mt-6 flex flex-wrap gap-3"><Link className="button-secondary" href="/competicoes" rel="noopener noreferrer" target="_blank">Ver página pública ↗</Link></div>
+      <div className="mt-6 flex flex-wrap gap-3"><Link className="button-secondary w-full sm:w-auto" href="/competicoes" rel="noopener noreferrer" target="_blank">Ver página pública ↗</Link></div>
       <div className="mt-8 grid min-w-0 gap-6 xl:grid-cols-[0.78fr_1.22fr]">
-        <aside className="glass-panel h-fit min-w-0 rounded-3xl p-5 sm:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold">Competições</h2>{canManage ? <button className="button-secondary disabled:opacity-50" disabled={busy || loading || !!loadError} onClick={() => selectCompetition(null)} type="button">Nova competição</button> : null}</div>
+        <aside ref={listRef} tabIndex={-1} aria-label="Lista de competições" className="glass-panel h-fit min-w-0 scroll-mt-28 rounded-3xl p-4 outline-none sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold">Competições</h2>{canManage ? <button className="button-secondary w-full disabled:opacity-50 sm:w-auto" disabled={busy || loading || !!loadError} onClick={() => selectCompetition(null)} type="button">Nova competição</button> : null}</div>
           <label className="mt-5 grid gap-2 text-sm font-bold" htmlFor="competitions-search">Buscar competição<input className="admin-input" id="competitions-search" onChange={(event) => setSearch(event.target.value)} placeholder="Evento, categoria ou local" type="search" value={search} /></label>
           <label className="mt-4 grid gap-2 text-sm font-bold" htmlFor="competitions-status">Status<select className="admin-input" id="competitions-status" onChange={(event) => setStatus(event.target.value)} value={status}><option value="all">Todos</option><option value="draft">Rascunhos</option><option value="published">Publicados</option></select></label>
           <button className="mt-4 min-h-11 text-sm font-bold text-acrux-cyan-bright disabled:opacity-50" disabled={loading || busy} onClick={() => void loadData()} type="button">{loading ? "Carregando…" : "Atualizar lista"}</button>
@@ -184,9 +188,10 @@ export function CompetitionsManager({ session }: { session: AdminSession }) {
           {seasonWarning ? <p className="mt-3 text-sm text-acrux-muted" role="status">{seasonWarning}</p> : null}
           <p className="mt-3 text-sm text-acrux-muted" role="status">{loading ? "Carregando competições…" : `${filtered.length} de ${competitions.length} competição(ões)`}</p>
           {!loading && !loadError && !filtered.length ? <p className="mt-5 rounded-xl border border-dashed border-white/20 p-4 text-sm text-acrux-muted">{competitions.length ? "Nenhuma competição corresponde aos filtros." : "Nenhuma competição cadastrada ainda."}</p> : null}
-          <div className="mt-4 grid gap-3">{filtered.map((row) => <button aria-pressed={draft.id === row.id} className={`min-w-0 rounded-2xl border p-4 text-left disabled:opacity-50 ${draft.id === row.id ? "border-cyan-200/35 bg-cyan-300/10" : "border-white/10 bg-acrux-navy/30 hover:border-cyan-200/25"}`} disabled={busy || loading} key={row.id} onClick={() => selectCompetition(row)} type="button"><span className="block break-words font-bold">{row.event_name}</span><span className="mt-2 block text-xs font-bold text-acrux-cyan-bright">{row.is_published ? "Publicado" : "Rascunho"}</span><span className="mt-2 block break-words text-sm text-acrux-muted">{[row.organization, row.location].filter(Boolean).join(" · ") || "Detalhes ainda não informados"}</span></button>)}</div>
+          <div className="mt-4 grid max-h-[min(24rem,60svh)] gap-3 overflow-y-auto pr-1 xl:max-h-[40rem]">{filtered.map((row) => <button aria-pressed={draft.id === row.id} className={`min-w-0 rounded-2xl border p-4 text-left disabled:opacity-50 ${draft.id === row.id ? "border-cyan-200/35 bg-cyan-300/10" : "border-white/10 bg-acrux-navy/30 hover:border-cyan-200/25"}`} disabled={busy || loading} key={row.id} onClick={() => selectCompetition(row)} type="button"><span className="block break-words font-bold">{row.event_name}</span><span className="mt-2 block text-xs font-bold text-acrux-cyan-bright">{row.is_published ? "Publicado" : "Rascunho"}</span><span className="mt-2 block break-words text-sm text-acrux-muted">{[row.organization, row.location].filter(Boolean).join(" · ") || "Detalhes ainda não informados"}</span></button>)}</div>
         </aside>
-        <div className="grid min-w-0 content-start gap-6">
+        <div ref={editorRef} role="region" tabIndex={-1} aria-label="Editor de competição" className="grid min-w-0 scroll-mt-28 content-start gap-6 outline-none">
+          {canManage || draft.id ? <button className="button-secondary w-full xl:hidden" type="button" onClick={() => focusAdminEditor(listRef.current)}>↑ Voltar à lista de competições</button> : null}
           {canManage || draft.id ? <CompetitionForm disabled={busy || loading || !!loadError} draft={draft} error={error} feedback={feedback} onChange={(next: CompetitionDraft) => { setDraft(next); setFeedback(null); }} onDelete={() => void remove()} onNameChange={updateName} onSubmit={save} readOnly={!canManage} seasons={seasons} timeZone={timeZone} /> : <div className="glass-panel rounded-3xl p-6"><h2 className="text-xl font-bold">Acesso de leitura</h2><p className="mt-3 text-acrux-muted">Selecione uma competição para consultar seus dados. Somente administradores podem cadastrar, editar ou excluir eventos.</p></div>}
           {draft.id ? <CompetitionRelations canManage={canManage} competitionId={draft.id} disabled={saving} key={draft.id} onBusyChange={setRelatedBusy} /> : canManage ? <p className="text-sm text-acrux-muted">Salve a competição para associar integrantes e álbuns de fotos.</p> : null}
         </div>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { AdminGate, type AdminSession } from "@/components/admin/admin-gate";
-import { adminNavigation } from "@/config/site";
+import { AdminNavigation } from "@/components/admin/admin-navigation";
 import { SiteLogo } from "@/components/layout/site-logo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -28,7 +28,6 @@ export function AdminDashboard() {
 function AdminDashboardContent({ session }: { session: AdminSession }) {
   const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const navigation = session.role === "admin" ? adminNavigation : adminNavigation.filter((item) => item.label !== "Usuários" && item.label !== "Sobre");
 
   async function signOut() {
     const supabase = createSupabaseBrowserClient();
@@ -40,30 +39,26 @@ function AdminDashboardContent({ session }: { session: AdminSession }) {
   }
 
   return (
-    <main className="section pt-30">
-      <div className="shell grid gap-6 lg:grid-cols-[15.5rem_1fr]">
-        <aside className="glass-panel h-fit rounded-2xl p-4 lg:sticky lg:top-24">
-          <SiteLogo className="px-3" compact />
-          <p className="px-3 text-xs font-bold uppercase tracking-[0.15em] text-acrux-cyan-bright">Administração</p>
-          <p className="mt-3 px-3 text-sm font-bold text-white">{session.displayName ?? session.email}</p>
-          <p className="mt-1 px-3 text-xs uppercase tracking-[0.12em] text-acrux-muted">{session.role}</p>
-          <nav aria-label="Navegação administrativa" className="mt-5 grid gap-1">
-            {navigation.map((item) => (
-              <Link className="rounded-xl px-3 py-2.5 text-sm font-semibold text-acrux-muted transition-colors hover:bg-white/6 hover:text-white" href={item.href} key={item.href}>{item.label}</Link>
-            ))}
-          </nav>
-          <button className="mt-4 w-full rounded-xl border border-white/12 px-3 py-2.5 text-sm font-bold text-acrux-muted transition-colors hover:border-red-200/30 hover:text-red-100" disabled={isSigningOut} onClick={signOut} type="button">
-            {isSigningOut ? "Saindo…" : "Sair"}
-          </button>
+    <main className="admin-workspace section pt-24 sm:pt-28">
+      <div className="shell grid min-w-0 gap-6 lg:grid-cols-[15.5rem_minmax(0,1fr)]">
+        <aside className="glass-panel min-w-0 h-fit rounded-2xl p-4 lg:sticky lg:top-24">
+          <div className="flex min-w-0 items-center justify-between gap-3 lg:block">
+            <SiteLogo className="min-h-11 shrink-0 lg:px-3" compact />
+            <div className="min-w-0 text-right lg:mt-3 lg:px-3 lg:text-left">
+              <p className="truncate text-sm font-bold text-white" title={session.displayName ?? session.email}>{session.displayName ?? session.email}</p>
+              <p className="mt-1 text-xs uppercase tracking-[0.12em] text-acrux-muted">{session.role}</p>
+            </div>
+          </div>
+          <AdminNavigation busy={isSigningOut} onSignOut={signOut} role={session.role} variant="sidebar" />
         </aside>
 
-        <div>
+        <div className="min-w-0">
           <p className="eyebrow">Dashboard</p>
-          <h1 className="mt-4 text-4xl font-black tracking-[-0.06em] text-white sm:text-5xl">Olá, {session.displayName ?? "equipe"}.</h1>
+          <h1 className="mt-4 line-clamp-2 text-3xl font-black tracking-[-0.06em] text-white [overflow-wrap:anywhere] sm:text-5xl" title={`Olá, ${session.displayName ?? "equipe"}.`}>Olá, {session.displayName ?? "equipe"}.</h1>
           <p className="body-copy mt-5">Gerencie as páginas e os conteúdos públicos da ACRUX. As alterações publicadas aparecem no site após serem salvas.</p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {dashboardCards.filter((card) => session.role === "admin" || card.label !== "Sobre").map((card) => (
-              <Link className="glass-panel card-hover rounded-2xl p-5" href={`/admin/${card.label.toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`} key={card.label}>
+              <Link className="glass-panel card-hover min-w-0 rounded-2xl p-4 sm:p-5" href={`/admin/${card.label.toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`} key={card.label}>
                 <p className="text-sm font-bold text-white">{card.label}</p>
                 <p className="mt-2 text-sm leading-6 text-acrux-muted">{card.description}</p>
               </Link>

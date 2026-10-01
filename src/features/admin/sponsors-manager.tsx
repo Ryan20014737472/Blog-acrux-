@@ -1,7 +1,7 @@
 "use client";
 
 import type { ChangeEvent, FormEvent } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 
 import type { AdminSession } from "@/components/admin/admin-gate";
@@ -11,6 +11,7 @@ import { compareSponsors, normalizedSponsorTier, sponsorTiers } from "@/config/s
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getPublicImageUrl, uploadPublicImage } from "@/lib/supabase/storage";
 import type { Database } from "@/types/database";
+import { focusAdminEditor } from "@/utils/focus-admin-editor";
 
 type Sponsor = Database["public"]["Tables"]["sponsors"]["Row"];
 type Draft = { id: string | null; name: string; websiteUrl: string; logoPath: string | null; tier: string; displayOrder: string; isPublished: boolean };
@@ -21,6 +22,8 @@ function fromRow(row: Sponsor): Draft {
 }
 
 export function SponsorsManager({ session }: { session: AdminSession }) {
+  const listRef = useRef<HTMLElement>(null);
+  const editorRef = useRef<HTMLFormElement>(null);
   const confirm = useAdminConfirm();
   const [items, setItems] = useState<Sponsor[]>([]);
   const [draft, setDraft] = useState<Draft>(blank);
@@ -99,21 +102,22 @@ export function SponsorsManager({ session }: { session: AdminSession }) {
   }
 
   return <AdminWorkspace description="Cadastre parceiros confirmados, envie a marca oficial e escolha quais aparecem no site. Apenas administradores podem alterar cadastros." section="patrocinadores" session={session} title="Gerenciar patrocinadores">
-    <div className="mt-10 grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-      <aside className="glass-panel h-fit rounded-3xl p-5 sm:p-6">
-        <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-bold text-white">Parceiros ({items.length})</h2>{canManage && <button className="button-secondary px-4" onClick={() => { setDraft(blank); setError(""); setMessage(""); }} type="button">Novo</button>}</div>
-        {loading ? <p className="mt-5 text-sm text-acrux-muted">Carregando…</p> : items.length ? <ul className="mt-5 space-y-2">{items.map((item) => <li key={item.id}><button className={`w-full rounded-xl border p-3 text-left text-sm transition-colors ${draft.id === item.id ? "border-cyan-300/50 bg-cyan-300/10" : "border-white/10 hover:border-cyan-300/25"}`} onClick={() => { setDraft(fromRow(item)); setError(""); setMessage(""); }} type="button"><span className="block font-bold text-white">{item.name}</span><span className="text-xs text-acrux-muted">{item.is_published ? "Publicado" : "Rascunho"}{item.tier ? ` · ${item.tier}` : ""}</span></button></li>)}</ul> : <p className="mt-5 text-sm text-acrux-muted">Nenhum patrocinador cadastrado.</p>}
+    <div className="mt-8 grid min-w-0 gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+      <aside aria-label="Lista de patrocinadores" className="glass-panel min-w-0 h-fit scroll-mt-24 rounded-3xl p-4 sm:p-6" ref={listRef} tabIndex={-1}>
+        <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-bold text-white">Parceiros ({items.length})</h2>{canManage && <button className="button-secondary px-4" onClick={() => { setDraft(blank); setError(""); setMessage(""); focusAdminEditor(editorRef.current, 1024); }} type="button">Novo</button>}</div>
+        {loading ? <p className="mt-5 text-sm text-acrux-muted">Carregando…</p> : items.length ? <ul aria-label="Patrocinadores cadastrados" className="mt-5 max-h-[36svh] space-y-2 overflow-y-auto overscroll-contain pr-1 lg:max-h-none lg:overflow-visible lg:pr-0" tabIndex={0}>{items.map((item) => <li key={item.id}><button aria-current={draft.id === item.id ? "true" : undefined} className={`w-full rounded-xl border p-3 text-left text-sm transition-colors ${draft.id === item.id ? "border-cyan-300/50 bg-cyan-300/10" : "border-white/10 hover:border-cyan-300/25"}`} onClick={() => { setDraft(fromRow(item)); setError(""); setMessage(""); focusAdminEditor(editorRef.current, 1024); }} type="button"><span className="block break-words font-bold text-white">{item.name}</span><span className="text-xs text-acrux-muted">{item.is_published ? "Publicado" : "Rascunho"}{item.tier ? ` · ${item.tier}` : ""}</span></button></li>)}</ul> : <p className="mt-5 text-sm text-acrux-muted">Nenhum patrocinador cadastrado.</p>}
       </aside>
-      <form className="glass-panel space-y-5 rounded-3xl p-5 sm:p-7" onSubmit={save}>
-        <h2 className="text-xl font-bold text-white">{draft.id ? "Editar parceiro" : "Novo parceiro"}</h2>
-        <label className="block text-sm text-white">Nome *<input className="mt-2 w-full rounded-xl border border-white/15 bg-white/5 p-3 text-white" disabled={!canManage || busy} maxLength={160} onChange={(e) => setDraft({ ...draft, name: e.target.value })} required value={draft.name} /></label>
-        <label className="block text-sm text-white">Site oficial (HTTPS)<input className="mt-2 w-full rounded-xl border border-white/15 bg-white/5 p-3 text-white" disabled={!canManage || busy} onChange={(e) => setDraft({ ...draft, websiteUrl: e.target.value })} placeholder="https://" type="url" value={draft.websiteUrl} /></label>
-        <div className="grid gap-5 sm:grid-cols-2"><label className="block text-sm text-white">Nível de patrocínio *<select className="mt-2 w-full rounded-xl border border-white/15 bg-acrux-ink p-3 text-white" disabled={!canManage || busy} onChange={(e) => setDraft({ ...draft, tier: e.target.value })} required value={draft.tier}><option value="">Selecione um nível</option>{draft.tier && !normalizedSponsorTier(draft.tier) && <option value={draft.tier}>Categoria antiga: {draft.tier}</option>}{sponsorTiers.map((tier) => <option key={tier} value={tier}>{tier}</option>)}</select></label><label className="block text-sm text-white">Ordem dentro do nível<input className="mt-2 w-full rounded-xl border border-white/15 bg-white/5 p-3 text-white" disabled={!canManage || busy} min="0" onChange={(e) => setDraft({ ...draft, displayOrder: e.target.value })} required type="number" value={draft.displayOrder} /></label></div>
+      <form aria-labelledby="sponsors-editor-title" className="glass-panel min-w-0 scroll-mt-24 space-y-5 rounded-3xl p-4 sm:p-7" onSubmit={save} ref={editorRef} tabIndex={-1}>
+        <button className="mb-4 flex min-h-11 items-center rounded-xl border border-white/12 px-4 text-sm font-bold text-acrux-cyan-bright lg:hidden" onClick={() => focusAdminEditor(listRef.current, 1024)} type="button">Voltar à lista</button>
+        <h2 className="text-xl font-bold text-white" id="sponsors-editor-title">{draft.id ? "Editar parceiro" : "Novo parceiro"}</h2>
+        <label className="block text-sm text-white">Nome *<input className="admin-input mt-2" disabled={!canManage || busy} maxLength={160} onChange={(e) => setDraft({ ...draft, name: e.target.value })} required value={draft.name} /></label>
+        <label className="block text-sm text-white">Site oficial (HTTPS)<input className="admin-input mt-2" disabled={!canManage || busy} onChange={(e) => setDraft({ ...draft, websiteUrl: e.target.value })} placeholder="https://" type="url" value={draft.websiteUrl} /></label>
+        <div className="grid min-w-0 gap-5 sm:grid-cols-2"><label className="block text-sm text-white">Nível de patrocínio *<select className="admin-input mt-2" disabled={!canManage || busy} onChange={(e) => setDraft({ ...draft, tier: e.target.value })} required value={draft.tier}><option value="">Selecione um nível</option>{draft.tier && !normalizedSponsorTier(draft.tier) && <option value={draft.tier}>Categoria antiga: {draft.tier}</option>}{sponsorTiers.map((tier) => <option key={tier} value={tier}>{tier}</option>)}</select></label><label className="block text-sm text-white">Ordem dentro do nível<input className="admin-input mt-2" disabled={!canManage || busy} inputMode="numeric" min="0" onChange={(e) => setDraft({ ...draft, displayOrder: e.target.value })} required type="number" value={draft.displayOrder} /></label></div>
         <p className="text-xs leading-5 text-acrux-muted">No site, a ordem é Ouro → Prata → Bronze. Dentro de cada nível, vale a ordem numérica acima.</p>
-        <div><label className="block text-sm text-white" htmlFor="sponsor-logo">Logo oficial</label><input accept="image/avif,image/gif,image/jpeg,image/png,image/webp" className="mt-2 block w-full text-sm text-acrux-muted" disabled={!canManage || busy} id="sponsor-logo" onChange={uploadLogo} type="file" />{logoUrl && <Image alt={`Logo de ${draft.name || "patrocinador"}`} className="mt-4 max-h-32 max-w-52 object-contain" height={128} src={logoUrl} unoptimized width={208} />}{draft.logoPath && canManage && <button className="mt-3 block text-sm text-acrux-cyan-bright" onClick={() => setDraft({ ...draft, logoPath: null })} type="button">Remover logo do cadastro</button>}</div>
-        <label className="flex items-center gap-3 text-sm text-white"><input checked={draft.isPublished} disabled={!canManage || busy} onChange={(e) => setDraft({ ...draft, isPublished: e.target.checked })} type="checkbox" />Exibir no site público</label>
+        <div><label className="block text-sm text-white" htmlFor="sponsor-logo">Logo oficial</label><input accept="image/avif,image/gif,image/jpeg,image/png,image/webp" className="admin-file-input mt-2" disabled={!canManage || busy} id="sponsor-logo" onChange={uploadLogo} type="file" />{logoUrl && <Image alt={`Logo de ${draft.name || "patrocinador"}`} className="mt-4 h-auto max-h-32 w-auto max-w-full object-contain" height={128} src={logoUrl} unoptimized width={208} />}{draft.logoPath && canManage && <button className="mt-3 flex min-h-11 items-center rounded-xl px-3 text-left text-sm text-acrux-cyan-bright hover:bg-cyan-300/10" onClick={() => setDraft({ ...draft, logoPath: null })} type="button">Remover logo do cadastro</button>}</div>
+        <label className="flex min-h-11 items-center gap-3 text-sm text-white"><input checked={draft.isPublished} disabled={!canManage || busy} onChange={(e) => setDraft({ ...draft, isPublished: e.target.checked })} type="checkbox" />Exibir no site público</label>
         {error && <p aria-live="assertive" className="text-sm text-red-200">{error}</p>}{message && <p aria-live="polite" className="text-sm text-acrux-cyan-bright">{message}</p>}
-        {canManage ? <div className="flex flex-wrap gap-3"><button className="button-primary" disabled={busy} type="submit">{busy ? "Aguarde…" : "Salvar patrocinador"}</button>{draft.id && <button className="button-secondary" disabled={busy} onClick={remove} type="button">Excluir</button>}</div> : <p className="text-sm text-acrux-muted">Seu perfil pode consultar esta seção; alterações exigem administrador.</p>}
+        {canManage ? <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap"><button className="button-primary w-full sm:w-auto" disabled={busy} type="submit">{busy ? "Aguarde…" : "Salvar patrocinador"}</button>{draft.id && <button className="button-secondary" disabled={busy} onClick={remove} type="button">Excluir</button>}</div> : <p className="text-sm text-acrux-muted">Seu perfil pode consultar esta seção; alterações exigem administrador.</p>}
       </form>
     </div>
   </AdminWorkspace>;

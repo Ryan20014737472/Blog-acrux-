@@ -114,13 +114,15 @@ export function ActivateAccountForm() {
   }
 
   return (
-    <form className="grid gap-5" onSubmit={handleSubmit}>
-      <label className="grid gap-2 text-sm font-bold text-white" htmlFor="new-password">
+    <form className="admin-auth grid min-w-0 gap-5" onSubmit={handleSubmit}>
+      <label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="new-password">
         Crie uma senha
         <input
           autoComplete="new-password"
-          className="min-h-12 rounded-xl border border-white/12 bg-[#020817]/58 px-4 text-base font-normal text-white"
+          className="min-h-12 min-w-0 w-full rounded-xl border border-white/12 bg-[#020817]/58 px-4 text-base font-normal text-white"
+          enterKeyHint="next"
           id="new-password"
+          name="newPassword"
           minLength={8}
           onChange={(event) => setPassword(event.target.value)}
           required
@@ -128,12 +130,14 @@ export function ActivateAccountForm() {
           value={password}
         />
       </label>
-      <label className="grid gap-2 text-sm font-bold text-white" htmlFor="confirm-password">
+      <label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="confirm-password">
         Confirme a senha
         <input
           autoComplete="new-password"
-          className="min-h-12 rounded-xl border border-white/12 bg-[#020817]/58 px-4 text-base font-normal text-white"
+          className="min-h-12 min-w-0 w-full rounded-xl border border-white/12 bg-[#020817]/58 px-4 text-base font-normal text-white"
+          enterKeyHint="done"
           id="confirm-password"
+          name="confirmPassword"
           minLength={8}
           onChange={(event) => setConfirmation(event.target.value)}
           required
@@ -141,7 +145,7 @@ export function ActivateAccountForm() {
           value={confirmation}
         />
       </label>
-      {error ? <p className="rounded-xl border border-red-300/22 bg-red-950/24 px-4 py-3 text-sm text-red-100" role="alert">{error}</p> : null}
+      {error ? <p className="break-words rounded-xl border border-red-300/22 bg-red-950/24 px-4 py-3 text-sm text-red-100" role="alert">{error}</p> : null}
       <button className="button-primary mt-1 w-full" disabled={isSubmitting} type="submit">
         {isSubmitting ? "Salvando…" : "Definir senha"}
       </button>
