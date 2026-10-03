@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { publicPageMetadata } from "@/lib/seo/public-metadata";
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -16,14 +17,12 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   const { slug } = await params;
 
   return {
-    title: "Post do blog",
-    description: `Post da ACRUX ROBOCEP: ${slug}.`,
-    openGraph: {
-      images: [],
-    },
-    twitter: {
-      images: [],
-    },
+    ...publicPageMetadata({
+      path: "/blog/",
+      title: "Postagem em preparação",
+      description: `Post da ACRUX ROBOCEP: ${slug}.`,
+    }),
+    robots: { index: false, follow: true },
   };
 }
 

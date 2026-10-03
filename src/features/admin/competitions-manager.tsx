@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AdminSession } from "@/components/admin/admin-gate";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
+import { useAdminDraftProtection } from "@/components/admin/admin-draft-protection";
 import { useAdminConfirm } from "@/components/admin/admin-confirmation-provider";
 import { CompetitionForm } from "@/features/admin/competition-form";
 import { CompetitionRelations } from "@/features/admin/competition-relations";
@@ -33,12 +34,12 @@ export function CompetitionsManager({ session }: { session: AdminSession }) {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [timeZone, setTimeZone] = useState("");
   const active = useRef(false);
-  const allowNavigation = useRef(false);
   const mutation = useRef(false);
   const loadSequence = useRef(0);
   const canManage = session.role === "admin";
   const busy = saving || relatedBusy;
   const dirty = canManage && JSON.stringify(draft) !== savedDraft;
+  useAdminDraftProtection({ dirty, busy, discardDescription: "As alterações desta competição serão descartadas." });
 
   const loadData = useCallback(async () => {
     const sequence = ++loadSequence.current;
@@ -76,28 +77,6 @@ export function CompetitionsManager({ session }: { session: AdminSession }) {
     return () => { active.current = false; loadSequence.current += 1; };
   }, [loadData]);
 
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (event: BeforeUnloadEvent) => { if (allowNavigation.current) return; event.preventDefault(); event.returnValue = ""; };
-    const warnBeforeNavigation = (event: MouseEvent) => {
-      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
-      if (!link || link.target === "_blank" || link.hasAttribute("download")) return;
-      const destination = new URL(link.href, window.location.href);
-      if (destination.origin !== window.location.origin || (destination.pathname === window.location.pathname && destination.search === window.location.search)) return;
-      event.preventDefault();
-      event.stopPropagation();
-      void confirm({ title: "Sair sem salvar?", description: "As alterações desta competição serão descartadas.", confirmLabel: "Descartar e sair", tone: "danger" }).then((accepted) => {
-        if (accepted) { allowNavigation.current = true; window.location.assign(destination.href); }
-      });
-    };
-    window.addEventListener("beforeunload", warn);
-    document.addEventListener("click", warnBeforeNavigation, true);
-    return () => {
-      window.removeEventListener("beforeunload", warn);
-      document.removeEventListener("click", warnBeforeNavigation, true);
-    };
-  }, [dirty, confirm]);
 
   async function selectCompetition(row: CompetitionRow | null) {
     if (busy || (dirty && !await confirm({ title: "Descartar alterações?", description: "As alterações não salvas desta competição serão perdidas.", confirmLabel: "Descartar alterações", tone: "danger" }))) return;

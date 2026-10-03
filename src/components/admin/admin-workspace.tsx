@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import type { AdminSession } from "@/components/admin/admin-gate";
 import { AdminNavigation } from "@/components/admin/admin-navigation";
+import { useAdminNavigationProtection } from "@/components/admin/admin-draft-protection";
 import { SiteLogo } from "@/components/layout/site-logo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -20,8 +21,10 @@ interface AdminWorkspaceProps {
 export function AdminWorkspace({ children, description, section, session, title }: AdminWorkspaceProps) {
   const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const { busy, notice, requestNavigation } = useAdminNavigationProtection();
 
   async function signOut() {
+    if (isSigningOut || busy || !await requestNavigation()) return;
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;
 
@@ -47,7 +50,8 @@ export function AdminWorkspace({ children, description, section, session, title 
               <p className="text-xs uppercase tracking-[0.12em] text-acrux-muted">{session.role}</p>
             </div>
           </div>
-          <AdminNavigation busy={isSigningOut} onSignOut={signOut} role={session.role} section={section} />
+          <AdminNavigation busy={isSigningOut || busy} signingOut={isSigningOut} onSignOut={signOut} role={session.role} section={section} />
+          {notice ? <p className="mt-3 text-sm leading-6 text-acrux-cyan-bright" role="status">{notice}</p> : null}
         </header>
 
         <div className="mt-7 min-w-0 sm:mt-10">

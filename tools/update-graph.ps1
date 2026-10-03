@@ -4,7 +4,7 @@ $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $graphifyCommand = Get-Command graphify -ErrorAction SilentlyContinue
 $graphifyPath = if ($graphifyCommand) { $graphifyCommand.Source } else { Join-Path $env:USERPROFILE '.local/bin/graphify.exe' }
 if (-not (Test-Path -LiteralPath $graphifyPath)) {
-  throw 'Graphify não encontrado. Instale graphifyy ou inclua graphify no PATH.'
+  throw 'Graphify não encontrado. Instale graphifyy[sql] ou inclua graphify no PATH.'
 }
 
 Push-Location $projectRoot

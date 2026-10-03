@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { publicPageMetadata } from "@/lib/seo/public-metadata";
 
 interface RobotDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -14,7 +15,14 @@ export const dynamicParams = false;
 
 export async function generateMetadata({ params }: RobotDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  return { title: "Robô", description: `Detalhes do robô ${slug} da ACRUX ROBOCEP.` };
+  return {
+    ...publicPageMetadata({
+      path: "/robos/",
+      title: "Robô em preparação",
+      description: `Detalhes do robô ${slug} da ACRUX ROBOCEP.`,
+    }),
+    robots: { index: false, follow: true },
+  };
 }
 
 export default function RobotDetailPage() {

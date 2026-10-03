@@ -36,7 +36,7 @@ const copy: Record<string, { title: string; description: string }> = {
 };
 
 export function AdminSection({ section }: AdminSectionProps) {
-  return <AdminGate>{(session) => <AdminConfirmationProvider><AdminSectionContent section={section} session={session} /></AdminConfirmationProvider>}</AdminGate>;
+  return <AdminGate>{(session) => <AdminConfirmationProvider key={section}><AdminSectionContent section={section} session={session} /></AdminConfirmationProvider>}</AdminGate>;
 }
 
 function AdminSectionContent({ section, session }: AdminSectionProps & { session: AdminSession }) {

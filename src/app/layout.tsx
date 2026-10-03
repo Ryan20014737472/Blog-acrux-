@@ -18,9 +18,6 @@ export const metadata: Metadata = {
   description: siteConfig.description,
   applicationName: siteConfig.name,
   keywords: ["ACRUX", "ROBOCEP", "robótica", "tecnologia", "engenharia"],
-  alternates: {
-    canonical: "/",
-  },
   openGraph: {
     type: "website",
     locale: siteConfig.locale,
@@ -58,6 +55,13 @@ export default function RootLayout({ children }: RootLayoutProps) {
         </a>
         <div className="site-shell">
           <Header />
+          <noscript>
+            <div className="shell pt-[calc(6rem+env(safe-area-inset-top))]">
+              <p className="rounded-2xl border border-cyan-200/25 bg-[#081a36] p-4 text-sm leading-6 text-white">
+                Ative o JavaScript do navegador para carregar notícias, perfis e outros conteúdos atualizados.
+              </p>
+            </div>
+          </noscript>
           <div id="main-content" tabIndex={-1}>{children}</div>
           <Footer />
         </div>

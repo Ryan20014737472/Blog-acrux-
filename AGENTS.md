@@ -13,6 +13,8 @@ A experiência em celular é uma prioridade do projeto, tanto para visitantes qu
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
 
+Install `graphifyy[sql]` so AST updates include database migrations and SQL functions as well as application code. Run the update script with PowerShell (`powershell` on Windows or `pwsh` on Linux/macOS).
+
 When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
 
 Rules:

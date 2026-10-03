@@ -1,17 +1,15 @@
 import type { MetadataRoute } from "next";
 
-import { publicNavigation, siteConfig } from "@/config/site";
+import { publicNavigation } from "@/config/site";
+import { publicUrl } from "@/lib/seo/public-metadata";
 
 export const dynamic = "force-static";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const now = new Date();
-  const routes = [...publicNavigation, { href: "/temporadas", label: "Temporadas" }];
-  const baseUrl = siteConfig.url.endsWith("/") ? siteConfig.url : `${siteConfig.url}/`;
+  const routes = [...publicNavigation, { href: "/temporadas", label: "Temporadas" }] as const;
 
   return routes.map((item) => ({
-    url: new URL(item.href === "/" ? "" : item.href.slice(1), baseUrl).toString(),
-    lastModified: now,
+    url: publicUrl(item.href === "/" ? "/" : `${item.href}/`),
     changeFrequency: item.href === "/" ? "weekly" : "monthly",
     priority: item.href === "/" ? 1 : 0.7,
   }));

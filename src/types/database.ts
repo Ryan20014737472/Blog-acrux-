@@ -143,9 +143,26 @@ export interface Database {
     Functions: {
       is_admin: { Args: Record<string, never>; Returns: boolean };
       is_editor: { Args: Record<string, never>; Returns: boolean };
+      save_post: {
+        Args: {
+          p_post_id: string | null;
+          p_expected_updated_at: string | null;
+          p_title: string;
+          p_slug: string;
+          p_excerpt: string;
+          p_body: string;
+          p_cover_path: string | null;
+          p_image_paths: string[];
+          p_tags: string[];
+          p_status: Status;
+          p_is_featured: boolean;
+          p_published_at: string | null;
+          p_category_ids: string[];
+        };
+        Returns: Database["public"]["Tables"]["posts"]["Row"][];
+      };
     };
     Enums: { app_role: Role; publication_status: Status };
     CompositeTypes: Record<string, never>;
   };
 }
-

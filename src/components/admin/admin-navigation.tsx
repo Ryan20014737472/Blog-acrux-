@@ -9,13 +9,14 @@ import { cn } from "@/utils/cn";
 
 interface AdminNavigationProps {
   busy: boolean;
+  signingOut?: boolean;
   onSignOut: () => void;
   role: AdminRole;
   section?: string;
   variant?: "horizontal" | "sidebar";
 }
 
-export function AdminNavigation({ busy, onSignOut, role, section, variant = "horizontal" }: AdminNavigationProps) {
+export function AdminNavigation({ busy, signingOut = busy, onSignOut, role, section, variant = "horizontal" }: AdminNavigationProps) {
   const [isOpen, setIsOpen] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
@@ -82,7 +83,7 @@ export function AdminNavigation({ busy, onSignOut, role, section, variant = "hor
           onClick={onSignOut}
           type="button"
         >
-          {busy ? "Saindo…" : "Sair"}
+          {signingOut ? "Saindo…" : "Sair"}
         </button>
       </div>
     </nav>

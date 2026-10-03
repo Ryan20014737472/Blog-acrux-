@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { ConfirmationDialog, type ConfirmationRequest } from "@/components/admin/confirmation-dialog";
+import { AdminDraftProtectionProvider } from "@/components/admin/admin-draft-protection";
 
 type ConfirmationOptions = Omit<ConfirmationRequest, "onConfirm">;
 type AskConfirmation = (options: ConfirmationOptions) => Promise<boolean>;
@@ -31,7 +32,7 @@ export function AdminConfirmationProvider({ children }: { children: ReactNode })
   useEffect(() => () => { resolvePending.current?.(false); resolvePending.current = null; }, []);
 
   return <ConfirmationContext.Provider value={confirm}>
-    {children}
+    <AdminDraftProtectionProvider confirm={confirm}>{children}</AdminDraftProtectionProvider>
     <ConfirmationDialog request={request} busy={false} onCancel={() => settle(false)} onConfirm={() => settle(true)} />
   </ConfirmationContext.Provider>;
 }
