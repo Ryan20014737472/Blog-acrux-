@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
+import { useAdminDraftProtection } from "@/components/admin/admin-draft-protection";
 import type { AdminSession } from "@/components/admin/admin-gate";
 import { ConfirmationDialog, type ConfirmationRequest } from "@/components/admin/confirmation-dialog";
 import { usersRequest, type ManagedUser, type UsersResponse } from "./users-api";
@@ -14,6 +15,7 @@ export function UsersManager({ session }: { session: AdminSession }) {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [search, setSearch] = useState("");
@@ -24,7 +26,11 @@ export function UsersManager({ session }: { session: AdminSession }) {
   const [confirmBusy, setConfirmBusy] = useState(false);
   const lock = useRef(false);
   const pending = useRef(new Set<string>());
-  const onDirty = useCallback((id: string, dirty: boolean) => { if (dirty) pending.current.add(id); else pending.current.delete(id); }, []);
+  const onDirty = useCallback((id: string, dirty: boolean) => {
+    if (dirty) pending.current.add(id); else pending.current.delete(id);
+    setHasUnsavedChanges(pending.current.size > 0);
+  }, []);
+  useAdminDraftProtection({ dirty: hasUnsavedChanges || email.trim().length > 0, busy: busy || confirmBusy, discardDescription: "As alterações de usuários e os convites ainda não enviados serão descartados." });
   const afterDiscard = (action: () => void) => {
     if (!pending.current.size) { action(); return; }
     setConfirmation({
@@ -36,25 +42,12 @@ export function UsersManager({ session }: { session: AdminSession }) {
     });
   };
   const loadId = useRef(0);
-  useEffect(() => {
-    const unload = (event: BeforeUnloadEvent) => { if (pending.current.size) { event.preventDefault(); event.returnValue = ""; } };
-    const navigate = (event: MouseEvent) => {
-      const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
-      if (pending.current.size && link && link.target !== "_blank" && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
-        event.preventDefault(); event.stopPropagation();
-        const href = link.href;
-        setConfirmation({ title: "Sair sem salvar?", description: "As alterações feitas nos usuários ainda não foram salvas e serão perdidas.", confirmLabel: "Sair sem salvar", tone: "danger", onConfirm: () => { pending.current.clear(); window.location.assign(href); } });
-      }
-    };
-    window.addEventListener("beforeunload", unload); document.addEventListener("click", navigate, true);
-    return () => { window.removeEventListener("beforeunload", unload); document.removeEventListener("click", navigate, true); };
-  }, []);
   const load = useCallback(async () => {
     const id = ++loadId.current;
     setLoading(true);
     try {
       const data = await usersRequest<UsersResponse>({ action: "list", page });
-      if (id === loadId.current) { pending.current.clear(); setResult(data); setListRevision((value) => value + 1); }
+      if (id === loadId.current) { pending.current.clear(); setHasUnsavedChanges(false); setResult(data); setListRevision((value) => value + 1); }
     } catch (cause) {
       if (id === loadId.current) { setResult(null); setError(cause instanceof Error ? cause.message : "Falha ao carregar usuários."); }
     } finally { if (id === loadId.current) setLoading(false); }

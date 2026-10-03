@@ -27,7 +27,7 @@ export function TeamPreviewCards() {
       return <div key={member.id}>
         <article className="glass-panel card-hover group h-full overflow-hidden rounded-2xl">
           {photo ? <img alt={`Retrato de ${member.name}`} className="block aspect-[4/5] w-full object-cover object-[center_25%] transition-transform duration-500 motion-safe:group-hover:scale-105" decoding="async" loading="lazy" src={photo} /> : <PlaceholderMedia className="aspect-[4/5] w-full border-x-0 border-t-0" label={`Foto de ${member.name} pendente`} />}
-          <div className="p-5 sm:p-6"><p className="text-xs font-bold uppercase tracking-[0.15em] text-acrux-cyan-bright">{member.area ?? "ACRUX"}</p><h3 className="mt-3 text-xl font-bold tracking-[-0.025em] text-white">{member.name}</h3>{member.role_title ? <p className="mt-2 text-sm font-bold text-white/78">{member.role_title}</p> : null}{member.short_bio ? <p className="mt-3 text-sm leading-6 text-acrux-muted">{member.short_bio}</p> : null}<ArrowLink className="mt-5" href="/equipe">Ver perfil</ArrowLink></div>
+          <div className="p-5 sm:p-6"><p className="text-xs font-bold uppercase tracking-[0.15em] text-acrux-cyan-bright">{member.area ?? "ACRUX"}</p><h3 className="mt-3 text-xl font-bold tracking-[-0.025em] text-white">{member.name}</h3>{member.role_title ? <p className="mt-2 text-sm font-bold text-white/78">{member.role_title}</p> : null}{member.short_bio ? <p className="mt-3 text-sm leading-6 text-acrux-muted">{member.short_bio}</p> : null}<ArrowLink className="mt-5" href="/equipe">Ver a equipe</ArrowLink></div>
         </article>
       </div>;
     })}

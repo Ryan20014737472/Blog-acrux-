@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
 import { useAdminConfirm } from "@/components/admin/admin-confirmation-provider";
+import { useAdminDraftProtection } from "@/components/admin/admin-draft-protection";
 import type { AdminSession } from "@/components/admin/admin-gate";
 import { getPostImagePaths } from "@/features/blog/post-images";
 import { parseTags, slugify } from "@/lib/content/slug";
@@ -36,6 +37,7 @@ interface PostDraft {
   status: PublicationStatus;
   tags: string;
   title: string;
+  updatedAt: string | null;
 }
 
 const emptyDraft: PostDraft = {
@@ -51,6 +53,7 @@ const emptyDraft: PostDraft = {
   featured: false,
   publishedAt: null,
   categoryIds: [],
+  updatedAt: null,
 };
 
 function toDraft(post: ManagedPost): PostDraft {
@@ -67,12 +70,19 @@ function toDraft(post: ManagedPost): PostDraft {
     featured: post.is_featured,
     publishedAt: post.published_at,
     categoryIds: post.categoryIds,
+    updatedAt: post.updated_at,
   };
 }
 
 function messageFromError(error: unknown, fallback: string) {
   if (typeof error === "object" && error !== null && "code" in error && error.code === "23505") {
     return "Esse slug já está em uso. Altere o endereço do conteúdo e tente novamente.";
+  }
+
+  if (typeof error === "object" && error !== null && "code" in error) {
+    if (error.code === "40001") return "Esta postagem foi alterada em outra sessão. Seu rascunho foi mantido; reabra a postagem para comparar as alterações antes de salvar.";
+    if (error.code === "23503") return "Uma categoria selecionada não está mais disponível. Remova essa seleção e tente salvar novamente. Seu rascunho foi mantido.";
+    if (error.code === "42501") return "Sua sessão não tem permissão para salvar esta postagem. Seu rascunho foi mantido.";
   }
 
   return fallback;
@@ -95,17 +105,33 @@ export function BlogManager({ session }: BlogManagerProps) {
   const [posts, setPosts] = useState<ManagedPost[]>([]);
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [draft, setDraft] = useState<PostDraft>(emptyDraft);
+  const [savedDraft, setSavedDraft] = useState<PostDraft>(emptyDraft);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const canManageCategories = session.role === "admin";
   const editorLocked = session.role === "editor" && Boolean(draft.id) && draft.status !== "draft";
-  const isBusy = isSaving || isUploading;
+  const isBusy = isSaving || isUploading || isCreatingCategory;
+  const isDirty = JSON.stringify(draft) !== JSON.stringify(savedDraft) || Boolean(newCategoryName.trim());
   const browserClient = createSupabaseBrowserClient();
+
+  useAdminDraftProtection({ dirty: isDirty, busy: isBusy, discardDescription: "As alterações desta postagem serão descartadas." });
+
+  async function selectDraft(nextDraft: PostDraft) {
+    if (isBusy) return;
+    if (isDirty && !await confirm({ title: "Descartar alterações?", description: "As alterações desta postagem serão descartadas.", confirmLabel: "Descartar", tone: "danger" })) return;
+    setDraft(nextDraft);
+    setSavedDraft(nextDraft);
+    setNewCategoryName("");
+    setError(null);
+    setFeedback(null);
+    focusAdminEditor(editorRef.current);
+  }
 
   const loadContent = useCallback(async () => {
     const supabase = createSupabaseBrowserClient();
@@ -225,6 +251,7 @@ export function BlogManager({ session }: BlogManagerProps) {
   }
 
   async function createCategory() {
+    if (isBusy || editorLocked || !canManageCategories) return;
     const name = newCategoryName.trim();
     const slug = slugify(name);
 
@@ -237,20 +264,25 @@ export function BlogManager({ session }: BlogManagerProps) {
     if (!supabase) return;
 
     setError(null);
-    const { data, error: categoryError } = await supabase
-      .from("categories")
-      .insert({ name, slug })
-      .select()
-      .single();
+    setIsCreatingCategory(true);
+    try {
+      const { data, error: categoryError } = await supabase
+        .from("categories")
+        .insert({ name, slug })
+        .select()
+        .single();
 
-    if (categoryError || !data) {
-      setError(messageFromError(categoryError, "Não foi possível criar a categoria."));
-      return;
+      if (categoryError || !data) {
+        setError(messageFromError(categoryError, "Não foi possível criar a categoria."));
+        return;
+      }
+
+      setCategories((current) => [...current, data].sort((a, b) => a.name.localeCompare(b.name, "pt-BR")));
+      setDraft((current) => ({ ...current, categoryIds: [...current.categoryIds, data.id] }));
+      setNewCategoryName("");
+    } finally {
+      setIsCreatingCategory(false);
     }
-
-    setCategories((current) => [...current, data].sort((a, b) => a.name.localeCompare(b.name, "pt-BR")));
-    setDraft((current) => ({ ...current, categoryIds: [...current.categoryIds, data.id] }));
-    setNewCategoryName("");
   }
 
   async function savePost(event: FormEvent<HTMLFormElement>) {
@@ -278,70 +310,35 @@ export function BlogManager({ session }: BlogManagerProps) {
     setIsSaving(true);
 
     const publishedAt = draft.status === "published" ? draft.publishedAt ?? new Date().toISOString() : null;
-    const payload = {
-      title,
-      slug,
-      excerpt,
-      body,
-      cover_path: draft.coverPath,
-      image_paths: draft.imagePaths,
-      tags: parseTags(draft.tags),
-      status: draft.status,
-      is_featured: draft.featured,
-      published_at: publishedAt,
-    };
-
     try {
-      let savedPost: PostRow | null = null;
+      const { data: savedPost, error: saveError } = await supabase.rpc("save_post", {
+        p_post_id: draft.id,
+        p_expected_updated_at: draft.updatedAt,
+        p_title: title,
+        p_slug: slug,
+        p_excerpt: excerpt,
+        p_body: body,
+        p_cover_path: draft.coverPath,
+        p_image_paths: draft.imagePaths,
+        p_tags: parseTags(draft.tags),
+        p_status: draft.status,
+        p_is_featured: draft.featured,
+        p_published_at: publishedAt,
+        p_category_ids: draft.categoryIds,
+      }).single();
 
-      if (draft.id) {
-        const { data, error: updateError } = await supabase
-          .from("posts")
-          .update(payload)
-          .eq("id", draft.id)
-          .select()
-          .single();
-
-        if (updateError) throw updateError;
-        savedPost = data;
-      } else {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user) throw new Error("Sua sessão expirou. Entre novamente para salvar.");
-
-        const { data, error: insertError } = await supabase
-          .from("posts")
-          .insert({ ...payload, author_id: user.id })
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        savedPost = data;
-      }
-
+      if (saveError) throw saveError;
       if (!savedPost) throw new Error("A postagem não foi salva.");
 
-      const { error: removeLinksError } = await supabase
-        .from("post_categories")
-        .delete()
-        .eq("post_id", savedPost.id);
-
-      if (removeLinksError) throw removeLinksError;
-
-      if (draft.categoryIds.length > 0) {
-        const { error: addLinksError } = await supabase
-          .from("post_categories")
-          .insert(draft.categoryIds.map((categoryId) => ({ post_id: savedPost.id, category_id: categoryId })));
-
-        if (addLinksError) throw addLinksError;
-      }
-
-      setDraft(toDraft({ ...savedPost, categoryIds: draft.categoryIds }));
+      const nextDraft = toDraft({ ...savedPost, categoryIds: draft.categoryIds });
+      setDraft(nextDraft);
+      setSavedDraft(nextDraft);
       setFeedback(draft.id ? "Postagem atualizada." : "Postagem criada.");
       await loadContent();
     } catch (saveError) {
+      if (typeof saveError === "object" && saveError !== null && "code" in saveError && saveError.code === "40001") {
+        await loadContent();
+      }
       setError(messageFromError(saveError, "Não foi possível salvar a postagem."));
     } finally {
       setIsSaving(false);
@@ -367,6 +364,8 @@ export function BlogManager({ session }: BlogManagerProps) {
     }
 
     setDraft(emptyDraft);
+    setSavedDraft(emptyDraft);
+    setNewCategoryName("");
     setFeedback("Postagem excluída. As imagens enviadas continuam guardadas no acervo de mídia.");
     await loadContent();
   }
@@ -385,7 +384,7 @@ export function BlogManager({ session }: BlogManagerProps) {
               <p className="text-lg font-bold text-white">Postagens</p>
               <p className="mt-1 text-sm text-acrux-muted">{posts.length} registro(s)</p>
             </div>
-            <button className="button-secondary min-h-11 px-4" disabled={isBusy} onClick={() => { setDraft(emptyDraft); setError(null); setFeedback(null); focusAdminEditor(editorRef.current); }} type="button">Nova</button>
+            <button className="button-secondary min-h-11 px-4" disabled={isBusy} onClick={() => { void selectDraft(emptyDraft); }} type="button">Nova</button>
           </div>
           <div aria-label="Postagens cadastradas" className="mt-5 grid min-w-0 gap-2 max-h-[36svh] overflow-y-auto overscroll-contain pr-1 xl:max-h-none xl:overflow-visible xl:pr-0" role="region" tabIndex={0}>
             {isLoading ? <p className="text-sm text-acrux-muted">Carregando postagens…</p> : null}
@@ -396,7 +395,7 @@ export function BlogManager({ session }: BlogManagerProps) {
                 className={draft.id === post.id ? "rounded-2xl border border-cyan-200/32 bg-cyan-300/9 p-4 text-left" : "rounded-2xl border border-white/8 bg-[#020817]/30 p-4 text-left transition-colors hover:border-cyan-200/22"}
                 key={post.id}
                 disabled={isBusy}
-                onClick={() => { setDraft(toDraft(post)); setError(null); setFeedback(null); focusAdminEditor(editorRef.current); }}
+                onClick={() => { void selectDraft(toDraft(post)); }}
                 type="button"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -419,7 +418,7 @@ export function BlogManager({ session }: BlogManagerProps) {
             {draft.id && session.role === "admin" ? <button className="min-h-11 rounded-full border border-red-200/20 px-4 py-2 text-sm font-bold text-red-100 transition-colors hover:border-red-200/50" disabled={isBusy} onClick={deletePost} type="button">Excluir</button> : null}
           </div>
 
-          <div className="mt-7 grid min-w-0 gap-5">
+          <fieldset className="mt-7 grid min-w-0 gap-5" disabled={isBusy || editorLocked}>
             {editorLocked ? <p className="rounded-2xl border border-cyan-200/18 bg-cyan-300/8 px-4 py-3 text-sm leading-6 text-acrux-muted">Esta postagem já está pública ou arquivada. Uma conta editora não pode alterá-la.</p> : null}
             <label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="post-title">
               Título
@@ -488,11 +487,11 @@ export function BlogManager({ session }: BlogManagerProps) {
               </label>
               <label className="flex min-h-12 items-center gap-3 rounded-xl border border-white/12 bg-[#020817]/45 px-4 text-sm font-bold text-white"><input checked={draft.featured} disabled={session.role !== "admin"} onChange={(event) => setDraft((current) => ({ ...current, featured: event.target.checked }))} type="checkbox" />Em destaque</label>
             </div>
-          </div>
+          </fieldset>
 
           {error ? <p className="mt-6 rounded-2xl border border-red-300/22 bg-red-950/24 px-4 py-3 text-sm text-red-100" role="alert">{error}</p> : null}
           {feedback ? <p className="mt-6 rounded-2xl border border-cyan-200/18 bg-cyan-300/8 px-4 py-3 text-sm text-acrux-cyan-bright" role="status">{feedback}</p> : null}
-          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap"><button className="button-primary w-full sm:w-auto" disabled={editorLocked || isSaving || isUploading} type="submit">{isSaving ? "Salvando…" : draft.id ? "Salvar alterações" : "Criar postagem"}</button>{draft.status === "published" && draft.publishedAt ? <p className="self-center text-sm text-acrux-muted">Publicada em {new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(new Date(draft.publishedAt))}</p> : null}</div>
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap"><button className="button-primary w-full sm:w-auto" disabled={editorLocked || isBusy} type="submit">{isSaving ? "Salvando…" : draft.id ? "Salvar alterações" : "Criar postagem"}</button>{draft.status === "published" && draft.publishedAt ? <p className="self-center text-sm text-acrux-muted">Publicada em {new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(new Date(draft.publishedAt))}</p> : null}</div>
         </form>
       </div>
     </AdminWorkspace>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { publicPageMetadata } from "@/lib/seo/public-metadata";
 
 interface TeamMemberDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -16,8 +17,12 @@ export async function generateMetadata({ params }: TeamMemberDetailPageProps): P
   const { slug } = await params;
 
   return {
-    title: "Perfil da equipe",
-    description: `Perfil da equipe ACRUX: ${slug}.`,
+    ...publicPageMetadata({
+      path: "/equipe/",
+      title: "Perfil em preparação",
+      description: `Perfil da equipe ACRUX: ${slug}.`,
+    }),
+    robots: { index: false, follow: true },
   };
 }
 

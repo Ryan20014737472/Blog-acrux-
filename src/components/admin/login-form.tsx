@@ -18,6 +18,7 @@ export function LoginForm() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmitting) return;
     setError(null);
 
     const supabase = createSupabaseBrowserClient();
@@ -27,32 +28,38 @@ export function LoginForm() {
     }
 
     setIsSubmitting(true);
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-    setIsSubmitting(false);
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInError) {
+        setError(signInError.status === 429 || (signInError.status ?? 0) >= 500 || signInError.name === "AuthRetryableFetchError"
+          ? "Não foi possível entrar agora. Confira sua conexão e tente novamente em alguns instantes."
+          : "Não foi possível entrar com essas credenciais.");
+        return;
+      }
 
-    if (signInError) {
-      setError("Não foi possível entrar com essas credenciais.");
-      return;
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) {
+        setError("Não foi possível validar a sessão. Entre novamente para continuar.");
+        return;
+      }
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (profileError) throw profileError;
+      if (!profile || (profile.role !== "admin" && profile.role !== "editor")) {
+        await supabase.auth.signOut();
+        setError("Esta conta não possui permissão administrativa.");
+        return;
+      }
+      router.replace("/admin");
+    } catch {
+      setError("Não foi possível verificar seu acesso agora. Confira sua conexão e tente novamente.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    const { data: profile } = user
-      ? await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
-          .maybeSingle()
-      : { data: null };
-
-    if (!profile || (profile.role !== "admin" && profile.role !== "editor")) {
-      await supabase.auth.signOut();
-      setError("Esta conta não possui permissão administrativa.");
-      return;
-    }
-
-    router.replace("/admin");
   }
 
   return (
@@ -71,6 +78,7 @@ export function LoginForm() {
             autoCapitalize="none"
             autoCorrect="off"
             className="min-h-12 min-w-0 w-full rounded-xl border border-white/12 bg-[#020817]/58 px-4 text-base font-normal text-white"
+            disabled={isSubmitting}
             enterKeyHint="next"
             id="email"
             inputMode="email"
@@ -87,6 +95,7 @@ export function LoginForm() {
           <input
             autoComplete="current-password"
             className="min-h-12 min-w-0 w-full rounded-xl border border-white/12 bg-[#020817]/58 px-4 text-base font-normal text-white"
+            disabled={isSubmitting}
             enterKeyHint="go"
             id="password"
             name="password"

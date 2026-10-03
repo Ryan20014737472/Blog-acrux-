@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { AdminSession } from "@/components/admin/admin-gate";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
 import { useAdminConfirm } from "@/components/admin/admin-confirmation-provider";
+import { useAdminDraftProtection } from "@/components/admin/admin-draft-protection";
 import { slugify } from "@/lib/content/slug";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
@@ -25,24 +26,19 @@ export function SeasonsManager({ session }: { session: AdminSession }) {
   const confirm = useAdminConfirm();
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [draft, setDraft] = useState<Draft>(blank);
+  const [baseline, setBaseline] = useState(JSON.stringify(blank));
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const canManage = session.role === "admin";
-  const original = seasons.find((season) => season.id === draft.id);
-  const isDirty = JSON.stringify(draft) !== JSON.stringify(original ? fromRow(original) : blank);
-
-  useEffect(() => {
-    if (!isDirty) return;
-    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [isDirty]);
+  const isDirty = canManage && JSON.stringify(draft) !== baseline;
+  useAdminDraftProtection({ dirty: isDirty, busy, discardDescription: "As alterações desta temporada serão descartadas." });
 
   async function select(next: Draft) {
-    if (isDirty && !await confirm({ title: "Descartar alterações?", description: "As alterações não salvas desta temporada serão perdidas.", confirmLabel: "Descartar alterações", tone: "danger" })) return;
+    if (busy || loading || (isDirty && !await confirm({ title: "Descartar alterações?", description: "As alterações não salvas desta temporada serão perdidas.", confirmLabel: "Descartar alterações", tone: "danger" }))) return;
     setDraft(next); setError(""); setMessage("");
+    setBaseline(JSON.stringify(next));
     focusAdminEditor(editorRef.current, 1024);
   }
 
@@ -88,6 +84,7 @@ export function SeasonsManager({ session }: { session: AdminSession }) {
     }
     if (!data) { setError("Este cadastro foi alterado por outra pessoa. Recarregue a página antes de salvar."); return; }
     setDraft(fromRow(data));
+    setBaseline(JSON.stringify(fromRow(data)));
     setMessage(draft.id ? "Temporada atualizada." : "Temporada cadastrada.");
     await load();
   }
@@ -103,6 +100,7 @@ export function SeasonsManager({ session }: { session: AdminSession }) {
     if (deleteError) { setError("Não foi possível excluir a temporada."); return; }
     if (!data) { setError("Este cadastro foi alterado por outra pessoa. Recarregue a página antes de excluir."); return; }
     setDraft(blank);
+    setBaseline(JSON.stringify(blank));
     setMessage("Temporada excluída. Os conteúdos vinculados foram mantidos sem temporada.");
     await load();
   }
@@ -110,8 +108,8 @@ export function SeasonsManager({ session }: { session: AdminSession }) {
   return <AdminWorkspace description="Organize o arquivo histórico da equipe. Publique apenas períodos confirmados; os demais ficam visíveis somente para a equipe autorizada." section="temporadas" session={session} title="Gerenciar temporadas">
     <div className="mt-8 grid min-w-0 gap-6 lg:grid-cols-[0.8fr_1.2fr]">
       <aside aria-label="Lista de temporadas" className="glass-panel min-w-0 h-fit scroll-mt-24 rounded-3xl p-4 sm:p-6" ref={listRef} tabIndex={-1}>
-        <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-bold text-white">Temporadas ({seasons.length})</h2>{canManage && <button className="button-secondary px-4" onClick={() => select(blank)} type="button">Nova</button>}</div>
-        {loading ? <p className="mt-5 text-sm text-acrux-muted">Carregando…</p> : seasons.length ? <ul aria-label="Temporadas cadastradas" className="mt-5 max-h-[36svh] space-y-2 overflow-y-auto overscroll-contain pr-1 lg:max-h-none lg:overflow-visible lg:pr-0" tabIndex={0}>{seasons.map((season) => <li key={season.id}><button aria-current={draft.id === season.id ? "true" : undefined} className={`w-full rounded-xl border p-3 text-left text-sm transition-colors ${draft.id === season.id ? "border-cyan-300/50 bg-cyan-300/10" : "border-white/10 hover:border-cyan-300/25"}`} onClick={() => select(fromRow(season))} type="button"><span className="block break-words font-bold text-white">{season.label}</span><span className="text-xs text-acrux-muted">{season.year} · {season.is_published ? "Publicada" : "Rascunho"}{season.is_current ? " · Atual" : ""}</span></button></li>)}</ul> : <p className="mt-5 text-sm text-acrux-muted">Nenhuma temporada cadastrada.</p>}
+        <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-bold text-white">Temporadas ({seasons.length})</h2>{canManage && <button className="button-secondary px-4" disabled={busy || loading} onClick={() => select(blank)} type="button">Nova</button>}</div>
+        {loading ? <p className="mt-5 text-sm text-acrux-muted">Carregando…</p> : seasons.length ? <ul aria-label="Temporadas cadastradas" className="mt-5 max-h-[36svh] space-y-2 overflow-y-auto overscroll-contain pr-1 lg:max-h-none lg:overflow-visible lg:pr-0" tabIndex={0}>{seasons.map((season) => <li key={season.id}><button aria-current={draft.id === season.id ? "true" : undefined} className={`w-full rounded-xl border p-3 text-left text-sm transition-colors ${draft.id === season.id ? "border-cyan-300/50 bg-cyan-300/10" : "border-white/10 hover:border-cyan-300/25"}`} disabled={busy} onClick={() => select(fromRow(season))} type="button"><span className="block break-words font-bold text-white">{season.label}</span><span className="text-xs text-acrux-muted">{season.year} · {season.is_published ? "Publicada" : "Rascunho"}{season.is_current ? " · Atual" : ""}</span></button></li>)}</ul> : <p className="mt-5 text-sm text-acrux-muted">Nenhuma temporada cadastrada.</p>}
       </aside>
       <form aria-labelledby="seasons-editor-title" className="glass-panel min-w-0 scroll-mt-24 space-y-5 rounded-3xl p-4 sm:p-7" onSubmit={save} ref={editorRef} tabIndex={-1}>
         <button className="mb-4 flex min-h-11 items-center rounded-xl border border-white/12 px-4 text-sm font-bold text-acrux-cyan-bright lg:hidden" onClick={() => focusAdminEditor(listRef.current, 1024)} type="button">Voltar à lista</button>

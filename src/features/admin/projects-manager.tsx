@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { AdminSession } from "@/components/admin/admin-gate";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
+import { useAdminDraftProtection } from "@/components/admin/admin-draft-protection";
 import { useAdminConfirm } from "@/components/admin/admin-confirmation-provider";
 import { emptyProject, projectToDraft, projectPayload, type ProjectRow, type ProjectDraft } from "@/features/admin/project-form-model";
 import { ProjectForm } from "@/features/admin/project-form";
@@ -37,11 +38,11 @@ export function ProjectsManager({ session }: { session: AdminSession }) {
   const [message, setMessage] = useState("");
   const [attempt, setAttempt] = useState(0);
   const mounted = useRef(false);
-  const allowNavigation = useRef(false);
   const lock = useRef(false);
   const canManage = session.role === "admin";
   const busy = saving || relationsBusy;
   const dirty = canManage && (file !== null || JSON.stringify(draft) !== baseline);
+  useAdminDraftProtection({ dirty, busy, discardDescription: "As alterações deste projeto serão descartadas." });
 
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => {
@@ -74,23 +75,6 @@ export function ProjectsManager({ session }: { session: AdminSession }) {
     setPreview(client ? getPublicImageUrl(client, "projects", draft.coverPath) : null);
   }, [file, draft.coverPath]);
 
-  useEffect(() => {
-    if (!dirty) return;
-    const unload = (event: BeforeUnloadEvent) => { if (allowNavigation.current) return; event.preventDefault(); event.returnValue = ""; };
-    const navigate = (event: MouseEvent) => {
-      if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-      const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
-      if (!link || link.target === "_blank" || link.hasAttribute("download")) return;
-      const url = new URL(link.href);
-      if (url.origin !== location.origin || (url.pathname === location.pathname && url.search === location.search)) return;
-      event.preventDefault(); event.stopPropagation();
-      void confirm({ title: "Sair sem salvar?", description: "As alterações deste projeto serão descartadas.", confirmLabel: "Descartar e sair", tone: "danger" }).then((accepted) => {
-        if (accepted) { allowNavigation.current = true; window.location.assign(url.href); }
-      });
-    };
-    window.addEventListener("beforeunload", unload); document.addEventListener("click", navigate, true);
-    return () => { window.removeEventListener("beforeunload", unload); document.removeEventListener("click", navigate, true); };
-  }, [dirty, confirm]);
 
   async function select(row: ProjectRow | null) {
     if (busy || (dirty && !await confirm({ title: "Descartar alterações?", description: "As alterações não salvas deste projeto serão perdidas.", confirmLabel: "Descartar alterações", tone: "danger" }))) return;

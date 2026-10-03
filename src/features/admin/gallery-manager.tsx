@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
 import { useAdminConfirm } from "@/components/admin/admin-confirmation-provider";
+import { useAdminDraftProtection } from "@/components/admin/admin-draft-protection";
 import type { AdminSession } from "@/components/admin/admin-gate";
 import { slugify } from "@/lib/content/slug";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -58,18 +59,27 @@ function numericOrder(value: string) {
 interface ImageEditorProps {
   image: GalleryImageRow;
   isAdmin: boolean;
-  onDeleted: (imageId: string) => void;
+  locked: boolean;
+  onDeleted: (image: GalleryImageRow, warning: string | null) => Promise<void>;
+  onStateChange: (imageId: string, state: { busy: boolean; dirty: boolean } | null) => void;
   onUpdated: (image: GalleryImageRow) => void;
   publicUrl: string;
 }
 
-function GalleryImageEditor({ image, isAdmin, onDeleted, onUpdated, publicUrl }: ImageEditorProps) {
+function GalleryImageEditor({ image, isAdmin, locked, onDeleted, onStateChange, onUpdated, publicUrl }: ImageEditorProps) {
   const confirm = useAdminConfirm();
   const [altText, setAltText] = useState(image.alt_text);
   const [caption, setCaption] = useState(image.caption ?? "");
   const [displayOrder, setDisplayOrder] = useState(String(image.display_order));
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isDirty = altText !== image.alt_text || caption !== (image.caption ?? "") || displayOrder !== String(image.display_order);
+
+  useEffect(() => {
+    onStateChange(image.id, { busy: isSaving, dirty: isDirty });
+  }, [image.id, isDirty, isSaving, onStateChange]);
+
+  useEffect(() => () => onStateChange(image.id, null), [image.id, onStateChange]);
 
   useEffect(() => {
     setAltText(image.alt_text);
@@ -79,6 +89,7 @@ function GalleryImageEditor({ image, isAdmin, onDeleted, onUpdated, publicUrl }:
 
   async function saveImage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSaving || locked) return;
     const trimmedAlt = altText.trim();
     if (!trimmedAlt) {
       setError("Descreva a imagem para leitores de tela.");
@@ -90,48 +101,44 @@ function GalleryImageEditor({ image, isAdmin, onDeleted, onUpdated, publicUrl }:
 
     setError(null);
     setIsSaving(true);
-    const { data, error: updateError } = await supabase
-      .from("gallery_images")
-      .update({ alt_text: trimmedAlt, caption: caption.trim() || null, display_order: numericOrder(displayOrder) })
-      .eq("id", image.id)
-      .select()
-      .single();
-    setIsSaving(false);
-
-    if (updateError || !data) {
+    try {
+      const { data, error: updateError } = await supabase
+        .from("gallery_images")
+        .update({ alt_text: trimmedAlt, caption: caption.trim() || null, display_order: numericOrder(displayOrder) })
+        .eq("id", image.id)
+        .select()
+        .single();
+      if (updateError || !data) throw updateError ?? new Error("Imagem não encontrada.");
+      onUpdated(data);
+    } catch {
       setError("Não foi possível atualizar os dados da imagem.");
-      return;
+    } finally {
+      setIsSaving(false);
     }
-
-    onUpdated(data);
   }
 
   async function deleteImage() {
-    if (!isAdmin || !await confirm({ title: "Excluir imagem?", description: "A imagem será removida do álbum e o arquivo será excluído do acervo. Esta ação não pode ser desfeita.", confirmLabel: "Excluir imagem", tone: "danger" })) return;
+    if (!isAdmin || isSaving || locked || !await confirm({ title: "Excluir imagem?", description: "A imagem será removida do álbum e o arquivo será excluído do acervo. Esta ação não pode ser desfeita.", confirmLabel: "Excluir imagem", tone: "danger" })) return;
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;
 
     setError(null);
     setIsSaving(true);
-    const { error: deleteRecordError } = await supabase
-      .from("gallery_images")
-      .delete()
-      .eq("id", image.id);
-
-    if (deleteRecordError) {
-      setIsSaving(false);
+    try {
+      const { error: deleteRecordError } = await supabase.from("gallery_images").delete().eq("id", image.id);
+      if (deleteRecordError) throw deleteRecordError;
+      let warning: string | null = null;
+      try {
+        const { error: removeFileError } = await supabase.storage.from("gallery").remove([image.storage_path]);
+        if (removeFileError) throw removeFileError;
+      } catch {
+        warning = "A imagem saiu da galeria, mas o arquivo não pôde ser removido do acervo.";
+      }
+      await onDeleted(image, warning);
+    } catch {
       setError("Não foi possível excluir a imagem.");
-      return;
-    }
-
-    const { error: removeFileError } = await supabase.storage
-      .from("gallery")
-      .remove([image.storage_path]);
-    setIsSaving(false);
-
-    onDeleted(image.id);
-    if (removeFileError) {
-      setError("A imagem saiu da galeria, mas o arquivo não pôde ser removido do acervo.");
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -139,9 +146,11 @@ function GalleryImageEditor({ image, isAdmin, onDeleted, onUpdated, publicUrl }:
     <article className="min-w-0 rounded-2xl border border-white/10 bg-[#020817]/34 p-4">
       <img alt={image.alt_text} className="aspect-[4/3] w-full rounded-xl border border-white/10 bg-acrux-navy/40 object-contain" src={publicUrl} />
       <form className="mt-4 grid min-w-0 gap-3" onSubmit={saveImage}>
+        <fieldset className="contents" disabled={isSaving || locked}>
         <label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor={`image-alt-${image.id}`}>Texto alternativo<input className="admin-input" id={`image-alt-${image.id}`} onChange={(event) => setAltText(event.target.value)} required value={altText} /></label>
         <label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor={`image-caption-${image.id}`}>Legenda<input className="admin-input" id={`image-caption-${image.id}`} onChange={(event) => setCaption(event.target.value)} value={caption} /></label>
         <div className="flex flex-wrap items-end gap-3"><label className="grid min-w-0 w-full gap-2 text-sm font-bold text-white sm:max-w-34" htmlFor={`image-order-${image.id}`}>Ordem<input className="admin-input" id={`image-order-${image.id}`} inputMode="numeric" min="0" onChange={(event) => setDisplayOrder(event.target.value)} type="number" value={displayOrder} /></label><button className="button-secondary min-h-11 w-full px-4 sm:w-auto" disabled={isSaving} type="submit">Salvar</button>{isAdmin ? <button className="min-h-11 w-full rounded-full border border-red-200/20 px-4 text-sm sm:w-auto font-bold text-red-100" disabled={isSaving} onClick={deleteImage} type="button">Excluir</button> : null}</div>
+        </fieldset>
         {error ? <p className="text-sm leading-6 text-red-100" role="alert">{error}</p> : null}
       </form>
     </article>
@@ -162,13 +171,25 @@ export function GalleryManager({ session }: GalleryManagerProps) {
   const [imageAltText, setImageAltText] = useState("");
   const [imageCaption, setImageCaption] = useState("");
   const [imageOrder, setImageOrder] = useState("0");
+  const [imageOrderBaseline, setImageOrderBaseline] = useState("0");
   const [isLoading, setIsLoading] = useState(true);
   const [isImageLoading, setIsImageLoading] = useState(false);
+  const [isImagesLoading, setIsImagesLoading] = useState(false);
+  const [imageStates, setImageStates] = useState<Record<string, { busy: boolean; dirty: boolean }>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const imageLoadGeneration = useRef(0);
+  const selectedGalleryId = useRef<string | null>(null);
+  selectedGalleryId.current = draft.id;
 
   const isAdmin = session.role === "admin";
+  const isBusy = isSaving || isImageLoading || Object.values(imageStates).some((state) => state.busy);
+  const originalGallery = galleries.find((gallery) => gallery.id === draft.id);
+  const isDirty = (isAdmin && JSON.stringify(draft) !== JSON.stringify(originalGallery ? toDraft(originalGallery) : emptyDraft))
+    || Object.values(imageStates).some((state) => state.dirty)
+    || Boolean(imageAltText || imageCaption || imageOrder !== imageOrderBaseline);
+  useAdminDraftProtection({ dirty: isDirty, busy: isBusy, discardDescription: "As alterações deste álbum e de suas imagens serão descartadas." });
   const homeFeaturedCount = galleries.filter((gallery) => gallery.is_home_featured).length;
   const homeSlotAvailable = draft.isHomeFeatured || homeFeaturedCount < 6;
   const browserClient = createSupabaseBrowserClient();
@@ -200,6 +221,8 @@ export function GalleryManager({ session }: GalleryManagerProps) {
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;
 
+    const generation = ++imageLoadGeneration.current;
+    setIsImagesLoading(true);
     const { data, error: loadError } = await supabase
       .from("gallery_images")
       .select("*")
@@ -207,6 +230,8 @@ export function GalleryManager({ session }: GalleryManagerProps) {
       .order("display_order")
       .order("created_at");
 
+    if (generation !== imageLoadGeneration.current || selectedGalleryId.current !== galleryId) return;
+    setIsImagesLoading(false);
     if (loadError) {
       setError("Não foi possível carregar as imagens deste álbum.");
       return;
@@ -219,12 +244,59 @@ export function GalleryManager({ session }: GalleryManagerProps) {
   }, [loadGalleries]);
 
   useEffect(() => {
+    imageLoadGeneration.current += 1;
+    setImages([]);
+    setImageStates({});
     if (draft.id) {
       void loadImages(draft.id);
     } else {
-      setImages([]);
+      setIsImagesLoading(false);
     }
+    return () => { imageLoadGeneration.current += 1; };
   }, [draft.id, loadImages]);
+
+  const updateImageState = useCallback((imageId: string, state: { busy: boolean; dirty: boolean } | null) => {
+    setImageStates((current) => {
+      if (state && current[imageId]?.busy === state.busy && current[imageId]?.dirty === state.dirty) return current;
+      if (!state && !(imageId in current)) return current;
+      const next = { ...current };
+      if (state) next[imageId] = state;
+      else delete next[imageId];
+      return next;
+    });
+  }, []);
+
+  async function selectGallery(next: GalleryDraft) {
+    if (isBusy) return;
+    if (isDirty && !await confirm({ title: "Descartar alterações?", description: "As alterações não salvas deste álbum ou de suas imagens serão perdidas.", confirmLabel: "Descartar alterações", tone: "danger" })) return;
+    setDraft(next);
+    setImageAltText(""); setImageCaption(""); setImageOrder("0"); setImageOrderBaseline("0");
+    setError(null); setFeedback(null);
+    focusAdminEditor(editorRef.current);
+  }
+
+  async function imageDeleted(image: GalleryImageRow, warning: string | null) {
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) return;
+    let refreshFailed = false;
+    try {
+      const { data, error: refreshError } = await supabase.from("galleries").select("*").eq("id", image.gallery_id).single();
+      if (refreshError || !data) throw refreshError ?? new Error("Álbum não encontrado.");
+      if (selectedGalleryId.current === image.gallery_id) {
+        setDraft((current) => ({ ...current, coverPath: data.cover_path }));
+        setGalleries((current) => current.map((gallery) => gallery.id === data.id ? data : gallery));
+      }
+    } catch {
+      refreshFailed = true;
+    } finally {
+      if (selectedGalleryId.current === image.gallery_id) {
+        imageLoadGeneration.current += 1;
+        setImages((current) => current.filter((item) => item.id !== image.id));
+      }
+    }
+    setError(warning ?? (refreshFailed ? "A imagem foi excluída, mas não foi possível atualizar a capa. Recarregue o álbum." : null));
+    if (!warning && !refreshFailed) setFeedback("Imagem excluída. A capa do álbum foi atualizada.");
+  }
 
   function updateTitle(title: string) {
     setDraft((current) => ({
@@ -236,7 +308,7 @@ export function GalleryManager({ session }: GalleryManagerProps) {
 
   async function saveGallery(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!isAdmin) return;
+    if (!isAdmin || isBusy) return;
 
     const title = draft.title.trim();
     const slug = slugify(draft.slug);
@@ -260,29 +332,34 @@ export function GalleryManager({ session }: GalleryManagerProps) {
       is_published: draft.isPublished,
       is_home_featured: draft.isHomeFeatured,
     };
-    const result = draft.id
-      ? await supabase.from("galleries").update(payload).eq("id", draft.id).select().single()
-      : await supabase.from("galleries").insert(payload).select().single();
-    setIsSaving(false);
-
-    if (result.error || !result.data) {
-      setError(result.error?.code === "23505" ? "Esse endereço de álbum já está em uso." : "Não foi possível salvar o álbum.");
-      return;
+    try {
+      const result = draft.id
+        ? await supabase.from("galleries").update(payload).eq("id", draft.id).select().single()
+        : await supabase.from("galleries").insert(payload).select().single();
+      if (result.error || !result.data) {
+        setError(result.error?.code === "23505" ? "Esse endereço de álbum já está em uso." : "Não foi possível salvar o álbum.");
+        return;
+      }
+      setDraft(toDraft(result.data));
+      setFeedback(draft.id ? "Álbum atualizado." : "Álbum criado. Agora você pode enviar imagens.");
+      await loadGalleries();
+    } catch {
+      setError("Não foi possível salvar o álbum.");
+    } finally {
+      setIsSaving(false);
     }
-
-    setDraft(toDraft(result.data));
-    setFeedback(draft.id ? "Álbum atualizado." : "Álbum criado. Agora você pode enviar imagens.");
-    await loadGalleries();
   }
 
   async function uploadImage(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file || !draft.id) return;
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file || !draft.id || isBusy || isImagesLoading) return;
+    const galleryId = draft.id;
     const altText = imageAltText.trim();
 
     if (!altText) {
       setError("Informe um texto alternativo antes de enviar a imagem.");
-      event.target.value = "";
       return;
     }
 
@@ -293,12 +370,15 @@ export function GalleryManager({ session }: GalleryManagerProps) {
     setFeedback(null);
     setIsImageLoading(true);
 
+    let uploadedPath: string | null = null;
+    let imageSaved = false;
     try {
-      const path = await uploadPublicImage(supabase, "gallery", `albums/${draft.id}`, file);
+      const path = await uploadPublicImage(supabase, "gallery", `albums/${galleryId}`, file);
+      uploadedPath = path;
       const { data, error: insertError } = await supabase
         .from("gallery_images")
         .insert({
-          gallery_id: draft.id,
+          gallery_id: galleryId,
           storage_bucket: "gallery",
           storage_path: path,
           alt_text: altText,
@@ -309,17 +389,20 @@ export function GalleryManager({ session }: GalleryManagerProps) {
         .single();
 
       if (insertError || !data) throw insertError ?? new Error("Não foi possível salvar a imagem.");
+      imageSaved = true;
 
       if (!draft.coverPath && isAdmin) {
         const { data: updatedGallery, error: coverError } = await supabase
           .from("galleries")
           .update({ cover_path: path })
-          .eq("id", draft.id)
+          .eq("id", galleryId)
           .select()
           .single();
 
         if (!coverError && updatedGallery) {
-          setDraft(toDraft(updatedGallery));
+          setDraft((current) => current.id === galleryId ? { ...current, coverPath: updatedGallery.cover_path } : current);
+        } else {
+          setError("A imagem foi adicionada, mas não foi possível definir a capa. Recarregue o álbum e tente novamente.");
         }
       }
 
@@ -327,44 +410,56 @@ export function GalleryManager({ session }: GalleryManagerProps) {
       setImageAltText("");
       setImageCaption("");
       setImageOrder(String(numericOrder(imageOrder) + 1));
+      setImageOrderBaseline(String(numericOrder(imageOrder) + 1));
       setFeedback("Imagem adicionada ao álbum.");
       await loadGalleries();
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "Não foi possível enviar a imagem.");
+      let cleanupWarning = "";
+      if (uploadedPath && !imageSaved) {
+        try {
+          const { data: existingImage, error: lookupError } = await supabase.from("gallery_images").select("id")
+            .eq("storage_bucket", "gallery").eq("storage_path", uploadedPath).maybeSingle();
+          if (lookupError) throw lookupError;
+          if (existingImage) {
+            setError("A imagem foi registrada, mas a confirmação do envio falhou. Recarregue o álbum antes de tentar novamente.");
+            return;
+          }
+          const { error: cleanupError } = await supabase.storage.from("gallery").remove([uploadedPath]);
+          if (cleanupError) throw cleanupError;
+        } catch {
+          cleanupWarning = " O arquivo enviado permaneceu no acervo, sem vínculo com o álbum.";
+        }
+      }
+      setError(`${uploadError instanceof Error ? uploadError.message : "Não foi possível enviar a imagem."}${cleanupWarning}`);
     } finally {
       setIsImageLoading(false);
-      event.target.value = "";
     }
   }
 
   async function deleteGallery() {
-    if (!draft.id || !isAdmin || !await confirm({ title: `Excluir o álbum “${draft.title}”?`, description: "O álbum e seus registros de imagens serão removidos. Esta ação não pode ser desfeita.", confirmLabel: "Excluir álbum", tone: "danger" })) return;
+    if (!draft.id || !isAdmin || isBusy || !await confirm({ title: `Excluir o álbum “${draft.title}”?`, description: "O álbum e seus registros de imagens serão removidos. Esta ação não pode ser desfeita.", confirmLabel: "Excluir álbum", tone: "danger" })) return;
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;
 
     setIsSaving(true);
     setError(null);
-    const { data: storedImages } = await supabase
-      .from("gallery_images")
-      .select("*")
-      .eq("gallery_id", draft.id);
-    const { error: deleteError } = await supabase
-      .from("galleries")
-      .delete()
-      .eq("id", draft.id);
-    setIsSaving(false);
-
-    if (deleteError) {
+    try {
+      const { data: storedImages, error: imagesError } = await supabase.from("gallery_images").select("*").eq("gallery_id", draft.id);
+      if (imagesError) throw imagesError;
+      const { error: deleteError } = await supabase.from("galleries").delete().eq("id", draft.id);
+      if (deleteError) throw deleteError;
+      const paths = (storedImages ?? []).filter((image) => image.storage_bucket === "gallery").map((image) => image.storage_path);
+      const { error: removeError } = paths.length ? await supabase.storage.from("gallery").remove(paths) : { error: null };
+      setDraft(emptyDraft);
+      setImages([]);
+      setImageAltText(""); setImageCaption(""); setImageOrder("0"); setImageOrderBaseline("0");
+      setFeedback(removeError ? "Álbum excluído. Alguns arquivos podem permanecer no acervo de mídia." : "Álbum e imagens excluídos.");
+      await loadGalleries();
+    } catch {
       setError("Não foi possível excluir o álbum.");
-      return;
+    } finally {
+      setIsSaving(false);
     }
-
-    const paths = (storedImages ?? []).filter((image) => image.storage_bucket === "gallery").map((image) => image.storage_path);
-    const { error: removeError } = paths.length ? await supabase.storage.from("gallery").remove(paths) : { error: null };
-    setDraft(emptyDraft);
-    setImages([]);
-    setFeedback(removeError ? "Álbum excluído. Alguns arquivos podem permanecer no acervo de mídia." : "Álbum e imagens excluídos.");
-    await loadGalleries();
   }
 
   return (
@@ -376,19 +471,19 @@ export function GalleryManager({ session }: GalleryManagerProps) {
     >
       <div className="mt-8 grid min-w-0 gap-6 xl:grid-cols-[0.78fr_1.22fr]">
         <aside aria-label="Lista de álbuns" className="glass-panel min-w-0 h-fit scroll-mt-24 rounded-3xl p-4 sm:p-6" ref={listRef} tabIndex={-1}>
-          <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-lg font-bold text-white">Álbuns</p><p className="mt-1 text-sm text-acrux-muted">{galleries.length} registro(s)</p></div>{isAdmin ? <button className="button-secondary min-h-11 px-4" onClick={() => { setDraft(emptyDraft); setError(null); setFeedback(null); focusAdminEditor(editorRef.current); }} type="button">Novo</button> : null}</div>
-          <div aria-label="Álbuns cadastrados" className="mt-5 grid min-w-0 gap-2 max-h-[36svh] overflow-y-auto overscroll-contain pr-1 xl:max-h-none xl:overflow-visible xl:pr-0" role="region" tabIndex={0}>{isLoading ? <p className="text-sm text-acrux-muted">Carregando álbuns…</p> : null}{!isLoading && galleries.length === 0 ? <p className="rounded-2xl border border-dashed border-cyan-200/16 p-4 text-sm leading-6 text-acrux-muted">Nenhum álbum cadastrado ainda.</p> : null}{galleries.map((gallery) => <button aria-current={draft.id === gallery.id ? "true" : undefined} className={draft.id === gallery.id ? "rounded-2xl border border-cyan-200/32 bg-cyan-300/9 p-4 text-left" : "rounded-2xl border border-white/8 bg-[#020817]/30 p-4 text-left transition-colors hover:border-cyan-200/22"} key={gallery.id} onClick={() => { setDraft(toDraft(gallery)); setError(null); setFeedback(null); focusAdminEditor(editorRef.current); }} type="button"><div className="flex flex-wrap items-start justify-between gap-3"><p className="min-w-0 break-words font-bold text-white">{gallery.title}</p><span className="shrink-0 text-xs font-bold text-acrux-cyan-bright">{gallery.is_published ? "Público" : "Rascunho"}</span></div><p className="mt-2 break-words text-sm text-acrux-muted">{gallery.category || "Sem categoria"}</p></button>)}</div>
+          <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-lg font-bold text-white">Álbuns</p><p className="mt-1 text-sm text-acrux-muted">{galleries.length} registro(s)</p></div>{isAdmin ? <button className="button-secondary min-h-11 px-4" disabled={isBusy} onClick={() => void selectGallery(emptyDraft)} type="button">Novo</button> : null}</div>
+          <div aria-label="Álbuns cadastrados" className="mt-5 grid min-w-0 gap-2 max-h-[36svh] overflow-y-auto overscroll-contain pr-1 xl:max-h-none xl:overflow-visible xl:pr-0" role="region" tabIndex={0}>{isLoading ? <p className="text-sm text-acrux-muted">Carregando álbuns…</p> : null}{!isLoading && galleries.length === 0 ? <p className="rounded-2xl border border-dashed border-cyan-200/16 p-4 text-sm leading-6 text-acrux-muted">Nenhum álbum cadastrado ainda.</p> : null}{galleries.map((gallery) => <button aria-current={draft.id === gallery.id ? "true" : undefined} className={draft.id === gallery.id ? "rounded-2xl border border-cyan-200/32 bg-cyan-300/9 p-4 text-left" : "rounded-2xl border border-white/8 bg-[#020817]/30 p-4 text-left transition-colors hover:border-cyan-200/22"} key={gallery.id} disabled={isBusy} onClick={() => void selectGallery(toDraft(gallery))} type="button"><div className="flex flex-wrap items-start justify-between gap-3"><p className="min-w-0 break-words font-bold text-white">{gallery.title}</p><span className="shrink-0 text-xs font-bold text-acrux-cyan-bright">{gallery.is_published ? "Público" : "Rascunho"}</span></div><p className="mt-2 break-words text-sm text-acrux-muted">{gallery.category || "Sem categoria"}</p></button>)}</div>
         </aside>
 
         <div aria-label="Editar álbum e imagens" className="grid min-w-0 scroll-mt-24 gap-6" ref={editorRef} tabIndex={-1}>
           <button className="flex min-h-11 w-fit items-center rounded-xl border border-white/12 px-4 text-sm font-bold text-acrux-cyan-bright xl:hidden" onClick={() => focusAdminEditor(listRef.current, 1280)} type="button">Voltar à lista</button>
           {isAdmin ? <form className="glass-panel min-w-0 rounded-3xl p-4 sm:p-7" onSubmit={saveGallery}>
-            <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-lg font-bold text-white">{draft.id ? "Editar álbum" : "Novo álbum"}</p><p className="mt-1 text-sm text-acrux-muted">Salve o álbum antes de enviar imagens.</p></div>{draft.id ? <button className="min-h-11 rounded-full border border-red-200/20 px-4 py-2 text-sm font-bold text-red-100" disabled={isSaving} onClick={deleteGallery} type="button">Excluir</button> : null}</div>
+            <fieldset className="contents" disabled={isBusy}><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-lg font-bold text-white">{draft.id ? "Editar álbum" : "Novo álbum"}</p><p className="mt-1 text-sm text-acrux-muted">Salve o álbum antes de enviar imagens.</p></div>{draft.id ? <button className="min-h-11 rounded-full border border-red-200/20 px-4 py-2 text-sm font-bold text-red-100" disabled={isBusy} onClick={deleteGallery} type="button">Excluir</button> : null}</div>
             <div className="mt-7 grid min-w-0 gap-5"><label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="gallery-title">Título<input className="admin-input" id="gallery-title" onChange={(event) => updateTitle(event.target.value)} required value={draft.title} /></label><label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="gallery-slug">Endereço do álbum<input className="admin-input" id="gallery-slug" onChange={(event) => setDraft((current) => ({ ...current, slug: slugify(event.target.value) }))} required value={draft.slug} /></label><label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="gallery-category">Categoria<input className="admin-input" id="gallery-category" onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value }))} placeholder="Ex.: competição, bastidores, projeto" value={draft.category} /></label><label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="gallery-description">Descrição<textarea className="admin-input min-h-25 resize-y" id="gallery-description" onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))} value={draft.description} /></label><div className="grid min-w-0 gap-3"><label className="flex min-h-12 items-center gap-3 rounded-xl border border-white/12 bg-[#020817]/45 px-4 text-sm font-bold text-white"><input checked={draft.isPublished} onChange={(event) => setDraft((current) => ({ ...current, isPublished: event.target.checked }))} type="checkbox" />Publicar álbum</label><label className={`flex min-h-12 items-center gap-3 rounded-xl border px-4 text-sm font-bold ${homeSlotAvailable ? "border-cyan-200/15 bg-cyan-300/5 text-white" : "border-white/8 bg-white/3 text-acrux-muted"}`}><input checked={draft.isHomeFeatured} disabled={!homeSlotAvailable} onChange={(event) => setDraft((current) => ({ ...current, isHomeFeatured: event.target.checked, isPublished: event.target.checked ? true : current.isPublished }))} type="checkbox" />Exibir na Home ({homeFeaturedCount}/6)</label>{!homeSlotAvailable ? <p className="text-xs leading-5 text-acrux-muted">Limite atingido. Remova outro álbum em destaque para liberar uma vaga.</p> : null}</div>{coverUrl ? <img alt="Capa atual do álbum" className="max-h-68 w-full rounded-2xl border border-white/10 bg-acrux-navy/40 object-contain" src={coverUrl} /> : null}</div>
-            <button className="button-primary mt-7 w-full sm:w-auto" disabled={isSaving} type="submit">{isSaving ? "Salvando…" : draft.id ? "Salvar alterações" : "Criar álbum"}</button>
+            <button className="button-primary mt-7 w-full sm:w-auto" disabled={isBusy} type="submit">{isSaving ? "Salvando…" : draft.id ? "Salvar alterações" : "Criar álbum"}</button></fieldset>
           </form> : <div className="glass-panel min-w-0 rounded-3xl p-4 sm:p-8"><p className="text-lg font-bold text-white">Envio de imagens</p><p className="mt-3 text-base leading-7 text-acrux-muted">Selecione um álbum existente para enviar ou organizar as imagens. Criar e publicar álbuns exige uma conta administradora.</p></div>}
 
-          {draft.id ? <section className="glass-panel min-w-0 rounded-3xl p-4 sm:p-7"><div><p className="text-lg font-bold text-white">Imagens de “{draft.title}”</p><p className="mt-1 text-sm text-acrux-muted">Cada imagem precisa de uma descrição para permanecer acessível.</p></div><div className="mt-6 rounded-2xl border border-white/10 bg-[#020817]/28 p-4"><div className="grid min-w-0 gap-4"><label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="gallery-image-alt">Texto alternativo<input className="admin-input" id="gallery-image-alt" onChange={(event) => setImageAltText(event.target.value)} placeholder="Descreva o que aparece na imagem" value={imageAltText} /></label><div className="grid min-w-0 gap-4 sm:grid-cols-[1fr_9rem]"><label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="gallery-image-caption">Legenda<input className="admin-input" id="gallery-image-caption" onChange={(event) => setImageCaption(event.target.value)} value={imageCaption} /></label><label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="gallery-image-order">Ordem<input className="admin-input" id="gallery-image-order" inputMode="numeric" min="0" onChange={(event) => setImageOrder(event.target.value)} type="number" value={imageOrder} /></label></div><label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="gallery-image-file">Arquivo<input accept="image/avif,image/gif,image/jpeg,image/png,image/webp" className="admin-file-input" disabled={isImageLoading} id="gallery-image-file" onChange={uploadImage} type="file" /></label></div></div><div className="mt-6 grid min-w-0 gap-4 md:grid-cols-2">{images.map((image) => { const imageUrl = browserClient ? getPublicImageUrl(browserClient, "gallery", image.storage_path) : null; return imageUrl ? <GalleryImageEditor image={image} isAdmin={isAdmin} key={image.id} onDeleted={(imageId) => setImages((current) => current.filter((item) => item.id !== imageId))} onUpdated={(updated) => setImages((current) => current.map((item) => item.id === updated.id ? updated : item).sort((a, b) => a.display_order - b.display_order))} publicUrl={imageUrl} /> : null; })}</div>{images.length === 0 ? <p className="mt-6 text-sm text-acrux-muted">Nenhuma imagem adicionada a este álbum.</p> : null}</section> : null}
+          {draft.id ? <section className="glass-panel min-w-0 rounded-3xl p-4 sm:p-7"><div><p className="text-lg font-bold text-white">Imagens de “{draft.title}”</p><p className="mt-1 text-sm text-acrux-muted">Cada imagem precisa de uma descrição para permanecer acessível.</p></div><fieldset className="mt-6 min-w-0 rounded-2xl border border-white/10 bg-[#020817]/28 p-4" disabled={isBusy || isImagesLoading}><div className="grid min-w-0 gap-4"><label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="gallery-image-alt">Texto alternativo<input className="admin-input" id="gallery-image-alt" onChange={(event) => setImageAltText(event.target.value)} placeholder="Descreva o que aparece na imagem" value={imageAltText} /></label><div className="grid min-w-0 gap-4 sm:grid-cols-[1fr_9rem]"><label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="gallery-image-caption">Legenda<input className="admin-input" id="gallery-image-caption" onChange={(event) => setImageCaption(event.target.value)} value={imageCaption} /></label><label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="gallery-image-order">Ordem<input className="admin-input" id="gallery-image-order" inputMode="numeric" min="0" onChange={(event) => setImageOrder(event.target.value)} type="number" value={imageOrder} /></label></div><label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="gallery-image-file">Arquivo<input accept="image/avif,image/gif,image/jpeg,image/png,image/webp" className="admin-file-input" disabled={isBusy || isImagesLoading} id="gallery-image-file" onChange={uploadImage} type="file" /></label></div></fieldset><div className="mt-6 grid min-w-0 gap-4 md:grid-cols-2">{images.filter((image) => image.gallery_id === draft.id).map((image) => { const imageUrl = browserClient ? getPublicImageUrl(browserClient, "gallery", image.storage_path) : null; return imageUrl ? <GalleryImageEditor image={image} isAdmin={isAdmin} key={image.id} locked={isBusy} onDeleted={imageDeleted} onStateChange={updateImageState} onUpdated={(updated) => setImages((current) => current.map((item) => item.id === updated.id ? updated : item).sort((a, b) => a.display_order - b.display_order))} publicUrl={imageUrl} /> : null; })}</div>{isImagesLoading ? <p className="mt-6 text-sm text-acrux-muted" role="status">Carregando imagens…</p> : images.filter((image) => image.gallery_id === draft.id).length === 0 ? <p className="mt-6 text-sm text-acrux-muted">Nenhuma imagem adicionada a este álbum.</p> : null}</section> : null}
         </div>
       </div>
       {error ? <p className="mt-6 rounded-2xl border border-red-300/22 bg-red-950/24 px-4 py-3 text-sm text-red-100" role="alert">{error}</p> : null}{feedback ? <p className="mt-6 rounded-2xl border border-cyan-200/18 bg-cyan-300/8 px-4 py-3 text-sm text-acrux-cyan-bright" role="status">{feedback}</p> : null}

@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
-import { useAdminConfirm } from "@/components/admin/admin-confirmation-provider";
+import { useAdminDraftProtection } from "@/components/admin/admin-draft-protection";
 import type { AdminSession } from "@/components/admin/admin-gate";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
 import { aboutFromRow, emptyAboutContent, type AboutContent } from "@/features/about/about-model";
@@ -29,7 +29,6 @@ const homeFields: { key: TextField; label: string; maxLength: number }[] = [
 ];
 
 export function AboutManager({ session }: { session: AdminSession }) {
-  const confirm = useAdminConfirm();
   const [draft, setDraft] = useState<AboutContent>(emptyAboutContent);
   const [baseline, setBaseline] = useState(JSON.stringify(emptyAboutContent));
   const [loading, setLoading] = useState(true);
@@ -37,9 +36,9 @@ export function AboutManager({ session }: { session: AdminSession }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
-  const allowNavigation = useRef(false);
   const canManage = session.role === "admin";
   const dirty = canManage && !loading && JSON.stringify(draft) !== baseline;
+  useAdminDraftProtection({ dirty, busy: saving, discardDescription: "As alterações da página Sobre serão descartadas." });
 
   useEffect(() => {
     let active = true;
@@ -60,24 +59,6 @@ export function AboutManager({ session }: { session: AdminSession }) {
     return () => { active = false; };
   }, []);
 
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (event: BeforeUnloadEvent) => { if (allowNavigation.current) return; event.preventDefault(); event.returnValue = ""; };
-    const navigate = (event: MouseEvent) => {
-      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
-      if (!link || link.target === "_blank" || link.hasAttribute("download")) return;
-      const destination = new URL(link.href, window.location.href);
-      if (destination.origin !== window.location.origin || (destination.pathname === window.location.pathname && destination.search === window.location.search)) return;
-      event.preventDefault(); event.stopPropagation();
-      void confirm({ title: "Sair sem salvar?", description: "As alterações da página Sobre serão descartadas.", confirmLabel: "Descartar e sair", tone: "danger" }).then((accepted) => {
-        if (accepted) { allowNavigation.current = true; window.location.assign(destination.href); }
-      });
-    };
-    window.addEventListener("beforeunload", warn);
-    document.addEventListener("click", navigate, true);
-    return () => { window.removeEventListener("beforeunload", warn); document.removeEventListener("click", navigate, true); };
-  }, [dirty, confirm]);
 
   function updateField(key: TextField, value: string) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -155,6 +136,8 @@ export function AboutManager({ session }: { session: AdminSession }) {
           ["about-save", "Salvar"],
         ].map(([id, label]) => <a className="flex min-h-11 items-center rounded-full border border-white/12 px-4 text-sm font-bold text-acrux-cyan-bright hover:border-cyan-200/35" href={`#${id}`} key={id}>{label}</a>)}
       </nav>
+      <fieldset className="grid min-w-0 gap-6" disabled={saving || !canManage}>
+      <legend className="sr-only">Conteúdo da página Sobre</legend>
       <section aria-labelledby="about-home-title" className="glass-panel min-w-0 scroll-mt-24 rounded-3xl p-4 sm:p-7" id="about-home" tabIndex={-1}>
         <h2 className="text-xl font-bold text-white" id="about-home-title">Apresentação na Home</h2>
         <p className="mt-2 text-sm text-acrux-muted">Edite o bloco “Constelação em movimento” da página inicial. Campos vazios exibem textos provisórios; só o conteúdo publicado aparece para visitantes.</p>
@@ -190,6 +173,7 @@ export function AboutManager({ session }: { session: AdminSession }) {
       <section aria-labelledby="about-partners-title" className="glass-panel min-w-0 scroll-mt-24 rounded-3xl p-4 sm:p-7" id="about-partners" tabIndex={-1}><h2 className="text-xl font-bold text-white" id="about-partners-title">Parcerias</h2><div className="mt-5 grid min-w-0 gap-5"><label className="grid min-w-0 gap-2 text-sm font-bold text-white">Título<input className="admin-input" maxLength={140} onChange={(event) => updateField("partnersTitle", event.target.value)} value={draft.partnersTitle} /></label><label className="grid min-w-0 gap-2 text-sm font-bold text-white">Texto<textarea className="admin-input min-h-24 resize-y" maxLength={1200} onChange={(event) => updateField("partnersBody", event.target.value)} value={draft.partnersBody} /></label></div></section>
 
       <div aria-label="Publicação e salvamento" className="glass-panel min-w-0 flex scroll-mt-24 flex-col gap-5 rounded-3xl p-4 sm:flex-row sm:items-center sm:justify-between sm:p-7" id="about-save" tabIndex={-1}><label className="flex min-h-11 items-center gap-3 text-sm font-bold text-white"><input checked={draft.isPublished} onChange={(event) => setDraft((current) => ({ ...current, isPublished: event.target.checked }))} type="checkbox" />Publicar página no site</label><div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"><Link className="button-secondary w-full sm:w-auto" href="/sobre">Ver página</Link><button className="button-primary w-full sm:w-auto" disabled={saving || !canManage} type="submit">{saving ? "Salvando…" : "Salvar página Sobre"}</button></div></div>
+      </fieldset>
     </form>}
   </AdminWorkspace>;
 }

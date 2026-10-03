@@ -4,6 +4,8 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
+import { useAdminConfirm } from "@/components/admin/admin-confirmation-provider";
+import { useAdminDraftProtection } from "@/components/admin/admin-draft-protection";
 import type { AdminSession } from "@/components/admin/admin-gate";
 import { ConfirmationDialog, type ConfirmationRequest } from "@/components/admin/confirmation-dialog";
 import { slugify } from "@/lib/content/slug";
@@ -66,6 +68,7 @@ interface TeamManagerProps {
 }
 
 export function TeamManager({ session }: TeamManagerProps) {
+  const confirm = useAdminConfirm();
   const listRef = useRef<HTMLElement>(null);
   const editorRef = useRef<HTMLFormElement>(null);
   const [members, setMembers] = useState<TeamMemberRow[]>([]);
@@ -82,12 +85,17 @@ export function TeamManager({ session }: TeamManagerProps) {
   const [confirmation, setConfirmation] = useState<ConfirmationRequest | null>(null);
 
   const canManage = session.role === "admin";
+  const isBusy = isSaving || isUploading || isSavingAreas;
+  const originalMember = members.find((member) => member.id === draft.id);
+  const memberDirty = canManage && JSON.stringify(draft) !== JSON.stringify(originalMember ? toDraft(originalMember) : emptyDraft);
+  const areasDirty = areas.some((area) => areaOrders[area.name] !== String(area.display_order)) || Boolean(newArea.trim());
+  useAdminDraftProtection({ dirty: memberDirty || (canManage && areasDirty), busy: isBusy, discardDescription: "As alterações deste integrante e das áreas da equipe serão descartadas." });
   const homeFeaturedCount = members.filter((member) => member.is_home_featured).length;
   const homeSlotAvailable = draft.isHomeFeatured || homeFeaturedCount < 3;
   const browserClient = createSupabaseBrowserClient();
   const photoUrl = browserClient ? getPublicImageUrl(browserClient, "avatars", draft.photoPath) : null;
 
-  const loadMembers = useCallback(async () => {
+  const loadMembers = useCallback(async (preserveAreaOrders = false) => {
     const supabase = createSupabaseBrowserClient();
     if (!supabase) {
       setError("A conexão com o Supabase não está disponível neste ambiente.");
@@ -110,7 +118,7 @@ export function TeamManager({ session }: TeamManagerProps) {
       setError("Não foi possível carregar as áreas da equipe.");
     } else {
       setAreas(areaData ?? []);
-      setAreaOrders(Object.fromEntries((areaData ?? []).map((area) => [area.name, String(area.display_order)])));
+      setAreaOrders((current) => Object.fromEntries((areaData ?? []).map((area) => [area.name, preserveAreaOrders ? current[area.name] ?? String(area.display_order) : String(area.display_order)])));
     }
 
     setIsLoading(false);
@@ -118,27 +126,29 @@ export function TeamManager({ session }: TeamManagerProps) {
 
   async function saveAreaOrders(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!canManage) return;
+    if (!canManage || isBusy) return;
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;
     setError(null);
     setFeedback(null);
     setIsSavingAreas(true);
-    const { error: saveError } = await supabase.from("team_areas").upsert(
-      areas.map((area) => ({ name: area.name, display_order: getNumber(areaOrders[area.name] ?? "0") })),
-      { onConflict: "name" },
-    );
-    setIsSavingAreas(false);
-    if (saveError) {
+    try {
+      const { error: saveError } = await supabase.from("team_areas").upsert(
+        areas.map((area) => ({ name: area.name, display_order: getNumber(areaOrders[area.name] ?? "0") })),
+        { onConflict: "name" },
+      );
+      if (saveError) throw saveError;
+      setFeedback("Ordem das áreas atualizada.");
+      await loadMembers();
+    } catch {
       setError("Não foi possível salvar a ordem das áreas.");
-      return;
+    } finally {
+      setIsSavingAreas(false);
     }
-    setFeedback("Ordem das áreas atualizada.");
-    await loadMembers();
   }
 
   async function addArea() {
-    if (!canManage) return;
+    if (!canManage || isBusy) return;
     const name = newArea.trim();
     if (!name) return;
     if (areas.some((area) => area.name.toLocaleLowerCase("pt-BR") === name.toLocaleLowerCase("pt-BR"))) {
@@ -150,26 +160,27 @@ export function TeamManager({ session }: TeamManagerProps) {
     setError(null);
     setFeedback(null);
     setIsSavingAreas(true);
-    const { error: addError } = await supabase.from("team_areas").insert({
-      name,
-      display_order: Math.max(0, ...areas.map((area) => area.display_order)) + 1,
-    });
-    setIsSavingAreas(false);
-    if (addError) {
+    try {
+      const { error: addError } = await supabase.from("team_areas").insert({
+        name,
+        display_order: Math.max(0, ...areas.map((area) => area.display_order)) + 1,
+      });
+      if (addError) throw addError;
+      setNewArea("");
+      setFeedback("Área adicionada. Agora você pode selecioná-la no perfil de um integrante.");
+      await loadMembers(true);
+    } catch {
       setError("Não foi possível adicionar a área.");
-      return;
+    } finally {
+      setIsSavingAreas(false);
     }
-    setNewArea("");
-    setFeedback("Área adicionada. Agora você pode selecioná-la no perfil de um integrante.");
-    await loadMembers();
   }
 
   function askDeleteArea(name: string) {
-    if (!canManage || members.some((member) => member.area === name)) return;
-    const unsavedOrder = areas.some((area) => areaOrders[area.name] !== String(area.display_order));
+    if (!canManage || isBusy || members.some((member) => member.area === name)) return;
     setConfirmation({
       title: `Excluir a área ${name}?`,
-      description: `A área será removida da lista de classificação. Nenhum integrante será excluído.${unsavedOrder ? " Alterações de ordem ainda não salvas serão descartadas." : ""}`,
+      description: "A área será removida da lista de classificação. Nenhum integrante será excluído.",
       confirmLabel: "Excluir área",
       tone: "danger",
       onConfirm: async () => {
@@ -190,7 +201,7 @@ export function TeamManager({ session }: TeamManagerProps) {
           }
           setDraft((current) => current.area === name ? { ...current, area: "" } : current);
           setFeedback(`Área ${name} excluída.`);
-          await loadMembers();
+          await loadMembers(true);
         } finally {
           setIsSavingAreas(false);
         }
@@ -199,7 +210,7 @@ export function TeamManager({ session }: TeamManagerProps) {
   }
 
   async function confirmAreaAction() {
-    if (!confirmation || isSavingAreas || isSaving) return;
+    if (!confirmation || isBusy) return;
     try {
       await confirmation.onConfirm();
     } catch {
@@ -221,9 +232,19 @@ export function TeamManager({ session }: TeamManagerProps) {
     }));
   }
 
+  async function selectMember(next: TeamDraft) {
+    if (isBusy) return;
+    if (memberDirty && !await confirm({ title: "Descartar alterações?", description: "As alterações não salvas deste integrante serão perdidas.", confirmLabel: "Descartar alterações", tone: "danger" })) return;
+    setDraft(next); setError(null); setFeedback(null);
+    focusAdminEditor(editorRef.current);
+  }
+
   async function uploadPhoto(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file || !canManage || isBusy) return;
+    const memberId = draft.id;
 
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;
@@ -234,19 +255,18 @@ export function TeamManager({ session }: TeamManagerProps) {
 
     try {
       const path = await uploadPublicImage(supabase, "avatars", "team", file);
-      setDraft((current) => ({ ...current, photoPath: path }));
+      setDraft((current) => current.id === memberId ? { ...current, photoPath: path } : current);
       setFeedback("Foto enviada. Salve o perfil para vinculá-la ao integrante.");
     } catch {
       setError("Não foi possível enviar a foto. Verifique o formato e o tamanho do arquivo.");
     } finally {
       setIsUploading(false);
-      event.target.value = "";
     }
   }
 
   async function saveMember(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!canManage) return;
+    if (!canManage || isBusy) return;
 
     const name = draft.name.trim();
     const slug = slugify(draft.slug);
@@ -275,24 +295,26 @@ export function TeamManager({ session }: TeamManagerProps) {
       is_home_featured: draft.isHomeFeatured,
     };
 
-    const result = draft.id
-      ? await supabase.from("team_members").update(payload).eq("id", draft.id).select().single()
-      : await supabase.from("team_members").insert(payload).select().single();
-
-    setIsSaving(false);
-
-    if (result.error || !result.data) {
-      setError(result.error?.code === "23505" ? "Esse endereço de perfil já está em uso." : "Não foi possível salvar o integrante.");
-      return;
+    try {
+      const result = draft.id
+        ? await supabase.from("team_members").update(payload).eq("id", draft.id).select().single()
+        : await supabase.from("team_members").insert(payload).select().single();
+      if (result.error || !result.data) {
+        setError(result.error?.code === "23505" ? "Esse endereço de perfil já está em uso." : "Não foi possível salvar o integrante.");
+        return;
+      }
+      setDraft(toDraft(result.data));
+      setFeedback(draft.id ? "Perfil atualizado." : "Integrante cadastrado.");
+      await loadMembers(true);
+    } catch {
+      setError("Não foi possível salvar o integrante.");
+    } finally {
+      setIsSaving(false);
     }
-
-    setDraft(toDraft(result.data));
-    setFeedback(draft.id ? "Perfil atualizado." : "Integrante cadastrado.");
-    await loadMembers();
   }
 
   function deleteMember() {
-    if (!draft.id || !canManage) return;
+    if (!draft.id || !canManage || isBusy) return;
     const memberId = draft.id;
     setConfirmation({
       title: "Excluir integrante?",
@@ -312,7 +334,7 @@ export function TeamManager({ session }: TeamManagerProps) {
           }
           setDraft(emptyDraft);
           setFeedback("Perfil excluído. A foto enviada permanece guardada no acervo de mídia.");
-          await loadMembers();
+          await loadMembers(true);
         } finally {
           setIsSaving(false);
         }
@@ -331,7 +353,7 @@ export function TeamManager({ session }: TeamManagerProps) {
       {feedback ? <p className="mt-6 rounded-2xl border border-cyan-200/18 bg-cyan-300/8 px-4 py-3 text-sm text-acrux-cyan-bright" role="status">{feedback}</p> : null}
       {canManage ? <details className="glass-panel mt-8 min-w-0 rounded-3xl p-4 sm:p-7">
         <summary className="min-h-11 cursor-pointer text-base font-bold text-white marker:text-acrux-cyan-bright">Organizar áreas da equipe <span className="text-sm font-normal text-acrux-muted">({areas.length})</span></summary>
-        <form className="mt-5" onSubmit={saveAreaOrders}>
+        <form className="mt-5" onSubmit={saveAreaOrders}><fieldset className="contents" disabled={isBusy}>
         <div><h2 className="text-lg font-bold text-white">Ordem das áreas</h2><p className="mt-1 text-sm leading-6 text-acrux-muted">As áreas aparecem como seções na página da equipe. Números menores aparecem primeiro. Para excluir uma área em uso, mova seus integrantes para outra área antes.</p></div>
         <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3">{areas.map((area) => {
           const memberCount = members.filter((member) => member.area === area.name).length;
@@ -341,19 +363,19 @@ export function TeamManager({ session }: TeamManagerProps) {
           </div>;
         })}</div>
         <div className="mt-5 grid min-w-0 gap-3 sm:flex sm:flex-wrap sm:items-end"><button className="button-secondary min-h-11 px-4" disabled={isSavingAreas || areas.length === 0} type="submit">{isSavingAreas ? "Salvando…" : "Salvar ordem das áreas"}</button><label className="grid min-w-0 gap-1.5 text-sm font-bold text-white">Nova área<input className="admin-input" maxLength={60} onChange={(event) => setNewArea(event.target.value)} placeholder="Ex.: Engenharia" value={newArea} /></label><button className="button-secondary min-h-11 px-4" disabled={isSavingAreas || !newArea.trim()} onClick={addArea} type="button">Adicionar área</button></div>
-      </form>
+      </fieldset></form>
       </details> : null}
       <div className="mt-6 grid min-w-0 gap-6 xl:grid-cols-[0.78fr_1.22fr]">
         <aside aria-label="Lista de integrantes" className="glass-panel min-w-0 h-fit scroll-mt-24 rounded-3xl p-4 sm:p-6" ref={listRef} tabIndex={-1}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div><p className="text-lg font-bold text-white">Integrantes</p><p className="mt-1 text-sm text-acrux-muted">{members.length} registro(s)</p></div>
-            {canManage ? <button className="button-secondary min-h-11 px-4" onClick={() => { setDraft(emptyDraft); setError(null); setFeedback(null); focusAdminEditor(editorRef.current); }} type="button">Novo</button> : null}
+            {canManage ? <button className="button-secondary min-h-11 px-4" disabled={isBusy} onClick={() => void selectMember(emptyDraft)} type="button">Novo</button> : null}
           </div>
           <div aria-label="Integrantes cadastrados" className="mt-5 grid min-w-0 gap-2 max-h-[36svh] overflow-y-auto overscroll-contain pr-1 xl:max-h-none xl:overflow-visible xl:pr-0" role="region" tabIndex={0}>
             {isLoading ? <p className="text-sm text-acrux-muted">Carregando equipe…</p> : null}
             {!isLoading && members.length === 0 ? <p className="rounded-2xl border border-dashed border-cyan-200/16 p-4 text-sm leading-6 text-acrux-muted">Nenhum integrante cadastrado ainda.</p> : null}
             {members.map((member) => (
-              <button aria-current={draft.id === member.id ? "true" : undefined} className={draft.id === member.id ? "rounded-2xl border border-cyan-200/32 bg-cyan-300/9 p-4 text-left" : "rounded-2xl border border-white/8 bg-[#020817]/30 p-4 text-left transition-colors hover:border-cyan-200/22"} key={member.id} onClick={() => { setDraft(toDraft(member)); setError(null); setFeedback(null); focusAdminEditor(editorRef.current); }} type="button">
+              <button aria-current={draft.id === member.id ? "true" : undefined} className={draft.id === member.id ? "rounded-2xl border border-cyan-200/32 bg-cyan-300/9 p-4 text-left" : "rounded-2xl border border-white/8 bg-[#020817]/30 p-4 text-left transition-colors hover:border-cyan-200/22"} key={member.id} disabled={isBusy} onClick={() => void selectMember(toDraft(member))} type="button">
                 <div className="flex flex-wrap items-start justify-between gap-3"><p className="min-w-0 break-words font-bold text-white">{member.name}</p><span className="shrink-0 text-xs font-bold text-acrux-cyan-bright">{member.is_published ? "Público" : "Rascunho"}</span></div>
                 <p className="mt-2 break-words text-sm text-acrux-muted">{[member.area, member.role_title].filter(Boolean).join(" · ") || "Área e função não informadas"}</p>
               </button>
@@ -363,19 +385,19 @@ export function TeamManager({ session }: TeamManagerProps) {
 
         {canManage ? <form aria-labelledby="team-editor-title" className="glass-panel min-w-0 rounded-3xl p-4 sm:p-7 scroll-mt-24" onSubmit={saveMember} ref={editorRef} tabIndex={-1}>
         <button className="mb-4 flex min-h-11 items-center rounded-xl border border-white/12 px-4 text-sm font-bold text-acrux-cyan-bright xl:hidden" onClick={() => focusAdminEditor(listRef.current, 1280)} type="button">Voltar à lista</button>
-          <div className="flex flex-wrap items-start justify-between gap-4"><div><h2 className="text-lg font-bold text-white" id="team-editor-title">{draft.id ? "Editar integrante" : "Novo integrante"}</h2><p className="mt-1 text-sm text-acrux-muted">Use somente informações e fotos aprovadas pela pessoa e pela equipe.</p></div>{draft.id ? <button className="min-h-11 rounded-full border border-red-200/20 px-4 py-2 text-sm font-bold text-red-100 transition-colors hover:border-red-200/50" disabled={isSaving} onClick={deleteMember} type="button">Excluir</button> : null}</div>
+          <fieldset className="contents" disabled={isBusy}><div className="flex flex-wrap items-start justify-between gap-4"><div><h2 className="text-lg font-bold text-white" id="team-editor-title">{draft.id ? "Editar integrante" : "Novo integrante"}</h2><p className="mt-1 text-sm text-acrux-muted">Use somente informações e fotos aprovadas pela pessoa e pela equipe.</p></div>{draft.id ? <button className="min-h-11 rounded-full border border-red-200/20 px-4 py-2 text-sm font-bold text-red-100 transition-colors hover:border-red-200/50" disabled={isBusy} onClick={deleteMember} type="button">Excluir</button> : null}</div>
           <div className="mt-7 grid min-w-0 gap-5">
             <label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="member-name">Nome<input className="admin-input" id="member-name" onChange={(event) => updateName(event.target.value)} required value={draft.name} /></label>
             <label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="member-slug">Endereço do perfil<input className="admin-input" id="member-slug" onChange={(event) => setDraft((current) => ({ ...current, slug: slugify(event.target.value) }))} required value={draft.slug} /></label>
             <div className="grid min-w-0 gap-5 sm:grid-cols-2"><label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="member-area">Área<select className="admin-input" id="member-area" onChange={(event) => setDraft((current) => ({ ...current, area: event.target.value }))} value={draft.area}><option value="">Selecionar área</option>{draft.area && !areas.some((area) => area.name === draft.area) ? <option value={draft.area}>{draft.area}</option> : null}{areas.map((area) => <option key={area.name} value={area.name}>{area.name}</option>)}</select></label><label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="member-role">Função<input className="admin-input" id="member-role" onChange={(event) => setDraft((current) => ({ ...current, roleTitle: event.target.value }))} value={draft.roleTitle} /></label></div>
             <label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="member-bio">Descrição curta<textarea className="admin-input min-h-30 resize-y" id="member-bio" maxLength={500} onChange={(event) => setDraft((current) => ({ ...current, shortBio: event.target.value }))} value={draft.shortBio} /></label>
-            <div className="grid min-w-0 gap-3"><label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="member-photo">Foto<input accept="image/avif,image/gif,image/jpeg,image/png,image/webp" className="admin-file-input" disabled={isUploading} id="member-photo" onChange={uploadPhoto} type="file" /></label>{photoUrl ? <img alt={`Prévia de ${draft.name || "integrante"}`} className="max-h-80 w-full rounded-2xl border border-white/10 bg-acrux-navy/40 object-contain" src={photoUrl} /> : <p className="text-sm text-acrux-muted">Nenhuma foto enviada.</p>}</div>
+            <div className="grid min-w-0 gap-3"><label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="member-photo">Foto<input accept="image/avif,image/gif,image/jpeg,image/png,image/webp" className="admin-file-input" disabled={isBusy} id="member-photo" onChange={uploadPhoto} type="file" /></label>{photoUrl ? <img alt={`Prévia de ${draft.name || "integrante"}`} className="max-h-80 w-full rounded-2xl border border-white/10 bg-acrux-navy/40 object-contain" src={photoUrl} /> : <p className="text-sm text-acrux-muted">Nenhuma foto enviada.</p>}</div>
             <div className="grid min-w-0 gap-4 sm:grid-cols-[1fr_auto]"><label className="grid min-w-0 gap-2 text-sm font-bold text-white" htmlFor="member-order">Ordem dentro da área<input className="admin-input" id="member-order" inputMode="numeric" min="0" onChange={(event) => setDraft((current) => ({ ...current, displayOrder: event.target.value }))} type="number" value={draft.displayOrder} /><span className="text-xs font-normal text-acrux-muted">A ordem das áreas é definida no painel acima.</span></label><div className="grid min-w-0 gap-3"><label className="flex min-h-12 items-center gap-3 rounded-xl border border-white/12 bg-[#020817]/45 px-4 text-sm font-bold text-white"><input checked={draft.isPublished} onChange={(event) => setDraft((current) => ({ ...current, isPublished: event.target.checked }))} type="checkbox" />Publicar perfil</label><label className={`flex min-h-12 items-center gap-3 rounded-xl border px-4 text-sm font-bold ${homeSlotAvailable ? "border-cyan-200/15 bg-cyan-300/5 text-white" : "border-white/8 bg-white/3 text-acrux-muted"}`}><input checked={draft.isHomeFeatured} disabled={!homeSlotAvailable} onChange={(event) => setDraft((current) => ({ ...current, isHomeFeatured: event.target.checked, isPublished: event.target.checked ? true : current.isPublished }))} type="checkbox" />Exibir na Home ({homeFeaturedCount}/3)</label>{!homeSlotAvailable ? <p className="text-xs leading-5 text-acrux-muted">Limite atingido. Remova outro destaque para liberar esta vaga.</p> : null}</div></div>
           </div>
-          <button className="button-primary mt-7 w-full sm:w-auto" disabled={isSaving || isUploading} type="submit">{isSaving ? "Salvando…" : draft.id ? "Salvar alterações" : "Cadastrar integrante"}</button>
+          <button className="button-primary mt-7 w-full sm:w-auto" disabled={isBusy} type="submit">{isSaving ? "Salvando…" : draft.id ? "Salvar alterações" : "Cadastrar integrante"}</button></fieldset>
         </form> : <div className="glass-panel min-w-0 rounded-3xl p-4 sm:p-8"><p className="text-lg font-bold text-white">Acesso de leitura</p><p className="mt-3 max-w-xl text-base leading-7 text-acrux-muted">Sua conta pode consultar a equipe, mas alterações de integrantes exigem uma conta administradora.</p></div>}
       </div>
-      <ConfirmationDialog busy={isSavingAreas || isSaving} onCancel={() => setConfirmation(null)} onConfirm={() => void confirmAreaAction()} request={confirmation} />
+      <ConfirmationDialog busy={isBusy} onCancel={() => setConfirmation(null)} onConfirm={() => void confirmAreaAction()} request={confirmation} />
     </AdminWorkspace>
   );
 }
