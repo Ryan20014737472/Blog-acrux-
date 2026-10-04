@@ -27,6 +27,7 @@ Deno.serve(createHandler((token): MailService => {
     verifyDispatchToken: (value) => rpc<boolean>("verify_content_notification_dispatch_token", { p_token: value }),
     settings: () => rpc<MailSettings>("get_content_notification_mail_settings"),
     configure: (apiKey, sender, enabled) => rpc<MailSettings>("configure_content_notification_mail", { p_api_key: apiKey, p_sender: sender, p_enabled: enabled }),
+    personalize: (opening) => rpc<MailSettings>("set_content_notification_mail_opening", { p_opening: opening }),
     credentials: () => rpc<MailCredentials>("get_content_notification_mail_credentials"),
     claim: (limit) => rpc<MailNotification[]>("claim_content_notification_emails", { p_limit: limit }),
     finish: (id, claimToken, providerId, error) => rpc<boolean>("finish_content_notification_email", { p_notification_id: id, p_claim_token: claimToken, p_provider_id: providerId, p_error: error }),

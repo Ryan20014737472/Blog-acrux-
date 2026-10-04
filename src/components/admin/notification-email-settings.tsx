@@ -11,6 +11,7 @@ interface MailSettings {
   enabled: boolean;
   configured: boolean;
   sender: string;
+  opening: string;
   pending_count: number;
   last_error: string | null;
 }
@@ -37,13 +38,15 @@ export function NotificationEmailSettings({ onSettingsChanged }: { onSettingsCha
   const [sender, setSender] = useState("onboarding@resend.dev");
   const [enabled, setEnabled] = useState(true);
   const [apiKey, setApiKey] = useState("");
+  const [opening, setOpening] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const dirty = Boolean(apiKey || settings && (sender !== settings.sender || enabled !== (settings.configured ? settings.enabled : true)));
-  useAdminDraftProtection({ dirty, busy, discardDescription: "A configuração de e-mail ainda não foi salva. A chave digitada será descartada ao sair." });
+  const openingDirty = Boolean(settings && opening !== (settings.opening ?? ""));
+  const dirty = Boolean(openingDirty || apiKey || settings && (sender !== settings.sender || enabled !== (settings.configured ? settings.enabled : true)));
+  useAdminDraftProtection({ dirty, busy, discardDescription: "A abertura ou a configuração de e-mail ainda não foi salva. As alterações serão descartadas ao sair." });
 
   useEffect(() => {
     let current = true;
@@ -55,6 +58,7 @@ export function NotificationEmailSettings({ onSettingsChanged }: { onSettingsCha
       setSettings(reply.settings);
       setSender(reply.settings.sender);
       setEnabled(reply.settings.configured ? reply.settings.enabled : true);
+      setOpening(reply.settings.opening ?? "");
     }).catch((cause) => {
       if (current) setError(cause instanceof Error ? cause.message : "Não foi possível carregar a configuração de e-mail.");
     }).finally(() => { if (current) setLoading(false); });
@@ -94,6 +98,23 @@ export function NotificationEmailSettings({ onSettingsChanged }: { onSettingsCha
     } finally { setBusy(false); }
   }
 
+  async function saveOpening(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy || !settings || !openingDirty) return;
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const reply = await mailRequest({ action: "personalize", opening });
+      if (!reply.settings) throw new Error("Não foi possível confirmar a abertura. Atualize esta página antes de tentar novamente.");
+      setSettings(reply.settings);
+      setOpening(reply.settings.opening ?? "");
+      setMessage("Abertura salva. Ela aparecerá antes dos dados em cada aviso por e-mail.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Não foi possível salvar a abertura.");
+    } finally { setBusy(false); }
+  }
+
   return <section className="glass-panel mt-6 min-w-0 rounded-2xl p-4 sm:p-6" aria-labelledby="notification-email-title" aria-busy={loading || busy}>
     <h2 className="text-xl font-bold text-white" id="notification-email-title">Avisos por e-mail</h2>
     <p className="mt-2 text-sm leading-6 text-acrux-muted">Os avisos são enviados apenas ao e-mail da sua conta, definido como destinatário deste painel.</p>
@@ -102,10 +123,24 @@ export function NotificationEmailSettings({ onSettingsChanged }: { onSettingsCha
     {loading ? <p className="mt-4 text-sm text-acrux-muted" role="status">Carregando configuração de e-mail…</p> : !settings ? <button className="button-secondary mt-4 min-h-11 w-full sm:w-auto" onClick={() => setAttempt((value) => value + 1)} type="button">Tentar novamente</button> : <>
       <p className="mt-4 text-sm leading-6 text-acrux-muted">{settings.configured ? settings.enabled ? "Envio automático ativo." : "Envio automático pausado." : "Ative o serviço de envio para receber avisos por e-mail."} {settings.pending_count > 0 ? `${settings.pending_count} ${settings.pending_count === 1 ? "aviso aguarda" : "avisos aguardam"} envio.` : ""}</p>
       {settings.last_error ? <p className="mt-2 text-sm leading-6 text-amber-200">O último envio não foi concluído. Confira a chave e o remetente; os avisos ficam na fila para uma nova tentativa.</p> : null}
+      <form className="mt-5 min-w-0 space-y-4" onSubmit={saveOpening} aria-label="Personalizar abertura do e-mail">
+        <fieldset className="min-w-0 space-y-4" disabled={busy}>
+          <div>
+            <label className="text-sm font-semibold text-white" htmlFor="notification-mail-opening">Abertura do e-mail</label>
+            <textarea className="admin-input mt-2 w-full min-w-0 resize-y" id="notification-mail-opening" maxLength={500} onChange={(event) => setOpening(event.target.value)} rows={4} value={opening} aria-describedby="notification-mail-opening-help" />
+            <p className="mt-2 text-sm leading-6 text-acrux-muted" id="notification-mail-opening-help">Esse texto vem antes do usuário responsável, horário e detalhes da alteração. Deixe vazio se preferir começar pelos dados. {opening.length}/500 caracteres.</p>
+          </div>
+          <div className="min-w-0 rounded-xl border border-white/10 bg-white/5 p-4">
+            <p className="text-sm font-semibold text-white">Prévia da abertura</p>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-acrux-muted [overflow-wrap:anywhere]">{opening.trim() ? opening : "Sem texto de abertura."}</p>
+          </div>
+          <button className="button-primary min-h-11 w-full sm:w-auto" disabled={!openingDirty} type="submit">{busy ? "Aguarde…" : "Salvar abertura"}</button>
+        </fieldset>
+      </form>
       <details className="mt-4 min-w-0" open={!settings.configured}>
         <summary className="flex min-h-11 cursor-pointer items-center rounded-lg px-2 text-sm font-bold text-acrux-cyan-bright">Configurar envio</summary>
         <p className="mt-2 text-sm leading-6 text-acrux-muted">Use uma chave de envio do <a className="inline-flex min-h-11 items-center font-semibold text-acrux-cyan-bright underline" href="https://resend.com/api-keys" target="_blank" rel="noopener noreferrer">Resend</a>. Ela é guardada de forma criptografada no servidor e não fica salva neste navegador.</p>
-        <form className="mt-4 min-w-0 space-y-4" onSubmit={save}>
+        <form className="mt-4 min-w-0 space-y-4" onSubmit={save} aria-label="Configurar envio de e-mail">
           <fieldset className="min-w-0 space-y-4" disabled={busy}>
             <div>
               <label className="text-sm font-semibold text-white" htmlFor="notification-mail-key">{settings.configured ? "Nova chave de envio (opcional)" : "Chave de envio"}</label>
@@ -125,7 +160,7 @@ export function NotificationEmailSettings({ onSettingsChanged }: { onSettingsCha
         </form>
       </details>
       <button className="button-secondary mt-4 min-h-11 w-full sm:w-auto" disabled={busy || dirty || !settings.configured} onClick={sendTest} type="button">Enviar e-mail de teste para mim</button>
-      {dirty && settings.configured ? <p className="mt-2 text-sm leading-6 text-acrux-muted">Salve a configuração antes de enviar o teste.</p> : null}
+      {dirty && settings.configured ? <p className="mt-2 text-sm leading-6 text-acrux-muted">Salve as alterações antes de enviar o teste.</p> : null}
     </>}
   </section>;
 }
