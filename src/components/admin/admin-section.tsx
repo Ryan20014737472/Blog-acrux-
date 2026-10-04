@@ -17,6 +17,7 @@ import { UsersManager } from "@/features/admin/users-manager";
 import { SponsorsManager } from "@/features/admin/sponsors-manager";
 import { SeasonsManager } from "@/features/admin/seasons-manager";
 import { AboutManager } from "@/features/admin/about-manager";
+import { NotificationsManager } from "@/features/admin/notifications-manager";
 
 interface AdminSectionProps {
   section: string;
@@ -33,6 +34,7 @@ const copy: Record<string, { title: string; description: string }> = {
   temporadas: { title: "Gerenciar temporadas", description: "A organização cronológica de conteúdos da ACRUX será administrada aqui." },
   patrocinadores: { title: "Gerenciar patrocinadores", description: "Parceiros confirmados, logotipos e links oficiais serão administrados aqui." },
   usuarios: { title: "Gerenciar usuários", description: "Somente administradores poderão conceder ou revisar acessos autorizados." },
+  notificacoes: { title: "Suas notificações", description: "Histórico privado das mudanças de conteúdo e seus responsáveis." },
 };
 
 export function AdminSection({ section }: AdminSectionProps) {
@@ -65,6 +67,10 @@ function AdminSectionContent({ section, session }: AdminSectionProps & { session
 
   if (section === "blog") {
     return <BlogManager session={session} />;
+  }
+
+  if (section === "notificacoes") {
+    return <NotificationsManager session={session} />;
   }
 
   if (section === "sobre") {

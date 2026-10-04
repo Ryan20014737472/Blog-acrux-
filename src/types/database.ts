@@ -143,6 +143,9 @@ export interface Database {
     Functions: {
       is_admin: { Args: Record<string, never>; Returns: boolean };
       is_editor: { Args: Record<string, never>; Returns: boolean };
+      content_notification_status: { Args: Record<string, never>; Returns: Json };
+      list_content_notifications: { Args: { p_limit?: number; p_before_id?: number | null; p_unread_only?: boolean }; Returns: Json };
+      mark_content_notifications_read: { Args: { p_ids?: number[] | null }; Returns: number };
       save_post: {
         Args: {
           p_post_id: string | null;

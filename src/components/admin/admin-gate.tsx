@@ -11,6 +11,7 @@ import type { UserRole } from "@/types/content";
 export type AdminRole = Extract<UserRole, "admin" | "editor">;
 
 export interface AdminSession {
+  userId: string;
   email: string;
   displayName: string | null;
   role: AdminRole;
@@ -81,7 +82,7 @@ export function AdminGate({ children }: AdminGateProps) {
           if (isCurrent) router.replace("/admin/login?error=unauthorized");
           return;
         }
-        setState({ email: user.email ?? "Conta autorizada", displayName: profile.display_name, role: profile.role });
+        setState({ userId: user.id, email: user.email ?? "Conta autorizada", displayName: profile.display_name, role: profile.role });
       } catch {
         if (isCurrent) setState({ error: "Não foi possível verificar seu acesso agora. Confira sua conexão e tente novamente." });
       }
