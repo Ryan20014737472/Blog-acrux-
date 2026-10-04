@@ -52,6 +52,8 @@ interface Dependencies {
 
 const origin = "https://ryan20014737472.github.io";
 const panelUrl = `${origin}/Blog-acrux-/admin/notificacoes/`;
+const mailLogoUrl = `${origin}/Blog-acrux-/brand/acrux-logo.jpg`;
+const mailGold = "#fbf406"; // The accent of the star in the ACRUX logo.
 const requestLimit = 4096;
 const batchSize = 5;
 const fieldLabels: Record<string, string> = {
@@ -143,6 +145,18 @@ function mailOpening(value: string = "") {
   };
 }
 
+function mailDocument(title: string, content: string) {
+  // Presentation tables and solid bgcolor fallbacks keep the text readable
+  // when a mail client blocks the logo or omits translucent backgrounds.
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><title>${escapeHtml(title)}</title></head><body bgcolor="#020817" style="margin:0;padding:0;background-color:#020817;color:#fdfdfd;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%;"><table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#020817" style="width:100%;background-color:#020817;"><tr><td align="center" style="padding:28px 12px;">
+<!--[if mso]><table role="presentation" border="0" cellpadding="0" cellspacing="0" width="640"><tr><td><![endif]-->
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="width:100%;max-width:640px;table-layout:fixed;border:1px solid #233959;border-radius:16px;overflow:hidden;"><tr><td background="${mailLogoUrl}" bgcolor="#071736" style="background-color:#071736;background-image:url('${mailLogoUrl}');background-repeat:no-repeat;background-position:center top;background-size:contain;border-top:4px solid ${mailGold};"><table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="width:100%;table-layout:fixed;"><tr><td bgcolor="#071736" style="padding:24px 20px;background-color:rgba(7,23,54,0.88);color:#fdfdfd;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6;overflow-wrap:anywhere;word-wrap:break-word;word-break:break-word;">
+${content}<p style="margin:24px 0 16px;"><a href="${panelUrl}" style="display:inline-block;padding:12px 16px;border:1px solid ${mailGold};border-radius:8px;background-color:#071736;color:${mailGold};font-size:16px;font-weight:700;text-decoration:underline;">Ver notificações no painel</a></p><p style="margin:0;font-size:12px;line-height:1.6;color:#a9c3e6;">Esta mensagem é exclusiva do proprietário do site.</p>
+</td></tr></table></td></tr></table>
+<!--[if mso]></td></tr></table><![endif]-->
+</td></tr></table></body></html>`;
+}
+
 export function notificationEmail(notification: MailNotification, opening: string = "") {
   const greeting = mailOpening(opening);
   const section = sectionLabels[notification.entity_table] ?? "Conteúdo do site";
@@ -157,9 +171,9 @@ export function notificationEmail(notification: MailNotification, opening: strin
     const before = valueText(notification.before_values[field], field);
     const after = valueText(notification.after_values[field], field);
     const name = bounded(fieldLabel(field), 100);
-    if (notification.action === "create") return { name, text: `${name}: ${after}`, html: `<strong>${escapeHtml(name)}</strong><br>${escapeHtml(after)}` };
-    if (notification.action === "delete") return { name, text: `${name}: ${before}`, html: `<strong>${escapeHtml(name)}</strong><br>${escapeHtml(before)}` };
-    return { name, text: `${name}\nAntes: ${before}\nDepois: ${after}`, html: `<strong>${escapeHtml(name)}</strong><br>Antes: ${escapeHtml(before)}<br>Depois: ${escapeHtml(after)}` };
+    if (notification.action === "create") return { name, text: `${name}: ${after}`, html: `<strong style="color:${mailGold};">${escapeHtml(name)}</strong><br>${escapeHtml(after)}` };
+    if (notification.action === "delete") return { name, text: `${name}: ${before}`, html: `<strong style="color:${mailGold};">${escapeHtml(name)}</strong><br>${escapeHtml(before)}` };
+    return { name, text: `${name}\nAntes: ${before}\nDepois: ${after}`, html: `<strong style="color:${mailGold};">${escapeHtml(name)}</strong><br>Antes: ${escapeHtml(before)}<br>Depois: ${escapeHtml(after)}` };
   });
   const details = changes.length ? changes.map((item) => item.text).join("\n\n") : "Consulte os detalhes da alteração no painel.";
   const extra = notification.changed_fields.length > 50 ? "\nHá mais campos alterados; consulte todos no painel." : "";
@@ -167,7 +181,7 @@ export function notificationEmail(notification: MailNotification, opening: strin
   return {
     subject,
     text: `${greeting.text}${description}\nQuando: ${dateText(notification.occurred_at)}\n\n${details}${extra}\n\nVer notificações: ${panelUrl}\n\nEsta mensagem é exclusiva do proprietário do site.`,
-    html: `<!doctype html><html lang="pt-BR"><body style="font-family:Arial,sans-serif;color:#18212b;line-height:1.6;max-width:640px;margin:24px auto;padding:0 16px">${greeting.html}<h1 style="font-size:22px">Alteração no site ACRUX</h1><p>${escapeHtml(description)}</p><p>Quando: ${escapeHtml(dateText(notification.occurred_at))}</p>${changes.length ? changes.map((item) => `<p style="white-space:pre-wrap;overflow-wrap:anywhere">${item.html}</p>`).join("") : `<p>${escapeHtml(details)}</p>`}${extra ? `<p>${escapeHtml(extra.trim())}</p>` : ""}<p><a href="${panelUrl}">Ver notificações no painel</a></p><p style="font-size:12px;color:#536171">Esta mensagem é exclusiva do proprietário do site.</p></body></html>`,
+    html: mailDocument("Alteração no site ACRUX", `${greeting.html}<h1 style="font-size:22px;line-height:1.3;color:${mailGold};">Alteração no site ACRUX</h1><p><span style="color:${mailGold};font-weight:700;">${escapeHtml(attribution)}</span>: ${escapeHtml(action.toLowerCase())} “${escapeHtml(label)}” em ${escapeHtml(section)}.</p><p style="color:${mailGold};">Quando: ${escapeHtml(dateText(notification.occurred_at))}</p>${changes.length ? changes.map((item) => `<p style="white-space:pre-wrap;overflow-wrap:anywhere">${item.html}</p>`).join("") : `<p>${escapeHtml(details)}</p>`}${extra ? `<p>${escapeHtml(extra.trim())}</p>` : ""}`),
   };
 }
 
@@ -304,7 +318,7 @@ export function createHandler(serviceFor: (token: string | null) => MailService,
         const result = await sendMail(credentials, {
           subject: "Teste de notificações ACRUX",
           text: `${greeting.text}As notificações de alterações no site ACRUX serão enviadas somente para você.\n\nVer notificações: ${panelUrl}\n\nEste é um teste solicitado no painel; nenhum conteúdo do site foi alterado.`,
-          html: `<!doctype html><html lang="pt-BR"><body style="font-family:Arial,sans-serif;line-height:1.6">${greeting.html}<h1 style="font-size:22px">Teste de notificações ACRUX</h1><p>As notificações de alterações no site ACRUX serão enviadas somente para você.</p><p><a href="${panelUrl}">Ver notificações no painel</a></p><p>Este é um teste solicitado no painel; nenhum conteúdo do site foi alterado.</p></body></html>`,
+          html: mailDocument("Teste de notificações ACRUX", `${greeting.html}<h1 style="font-size:22px;line-height:1.3;color:${mailGold};">Teste de notificações ACRUX</h1><p>As notificações de alterações no site ACRUX serão enviadas somente para você.</p><p>Este é um teste solicitado no painel; nenhum conteúdo do site foi alterado.</p>`),
         }, `acrux-content-notification-test-${uuid()}`);
         if (result.error) return errorReply(503, result.error);
         return reply(200, { message: "E-mail de teste aceito pelo serviço somente para o proprietário. Confira sua caixa de entrada e spam." });

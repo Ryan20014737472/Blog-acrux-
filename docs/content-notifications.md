@@ -16,6 +16,8 @@ O remetente `onboarding@resend.dev` funciona somente para o endereço cadastrado
 
 Em Notificações → Avisos por e-mail, o proprietário pode editar a **Abertura do e-mail**, conferir a prévia e usar **Salvar abertura**. São até 500 caracteres de texto, com quebras de linha. Deixar vazio remove a saudação. A abertura antecede os dados em cada aviso e também no teste; não altera o assunto nem os detalhes da mudança. HTML digitado aparece como texto. É possível salvar a abertura mesmo sem configurar o Resend; essa ação não ativa o envio, não substitui a chave e não muda o destinatário. A configuração de entrega e a abertura são salvas separadamente, com proteção de rascunhos ao sair.
 
+O modelo HTML dos avisos e do teste usa a logo oficial como marca-d’água sobre fundo azul escuro. Usuário responsável, horário, títulos dos campos e link do painel recebem o tom da estrela da ACRUX (`#fbf406`). A imagem é carregada da pasta pública `brand` do site. Fundos sólidos mantêm a leitura em clientes que bloqueiam imagens ou não exibem transparência. O conteúdo acompanha a largura disponível, com texto a partir de 16px e quebra de valores longos. O formato de texto simples continua disponível para leitores que não usam HTML.
+
 O cron `acrux-private-content-notifications` verifica a fila a cada minuto e chama a função somente quando há avisos prontos e envio habilitado/configurado. A fila possui leases, identificadores estáveis de idempotência e novas tentativas com intervalo crescente. Falhas de envio não bloqueiam salvamentos. O estado “enviado” indica aceitação pelo serviço de e-mail, não confirmação de leitura ou chegada à caixa de entrada.
 
 ## Validação

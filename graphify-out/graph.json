@@ -2096,7 +2096,7 @@
       "file_type": "code",
       "norm_label": "actiontext()",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L123"
+      "source_location": "L125"
     },
     {
       "id": "supabase_functions_content_notification_mail_handler_bounded",
@@ -2108,7 +2108,7 @@
       "file_type": "code",
       "norm_label": "bounded()",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L97"
+      "source_location": "L99"
     },
     {
       "id": "supabase_functions_content_notification_mail_handler_createhandler",
@@ -2120,7 +2120,7 @@
       "file_type": "code",
       "norm_label": "createhandler()",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L220"
+      "source_location": "L234"
     },
     {
       "id": "supabase_functions_content_notification_mail_handler_createhandler_sendmail",
@@ -2132,7 +2132,7 @@
       "file_type": "code",
       "norm_label": "sendmail()",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L225"
+      "source_location": "L239"
     },
     {
       "id": "supabase_functions_content_notification_mail_handler_datetext",
@@ -2144,7 +2144,7 @@
       "file_type": "code",
       "norm_label": "datetext()",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L133"
+      "source_location": "L135"
     },
     {
       "id": "supabase_functions_content_notification_mail_handler_escapehtml",
@@ -2156,7 +2156,7 @@
       "file_type": "code",
       "norm_label": "escapehtml()",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L100"
+      "source_location": "L102"
     },
     {
       "id": "supabase_functions_content_notification_mail_handler_fieldlabel",
@@ -2168,7 +2168,19 @@
       "file_type": "code",
       "norm_label": "fieldlabel()",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L103"
+      "source_location": "L105"
+    },
+    {
+      "id": "supabase_functions_content_notification_mail_handler_maildocument",
+      "label": "mailDocument()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 11,
+      "community_name": "content-notification-mail/handler.ts",
+      "file_type": "code",
+      "norm_label": "maildocument()",
+      "source_file": "supabase/functions/content-notification-mail/handler.ts",
+      "source_location": "L148"
     },
     {
       "id": "supabase_functions_content_notification_mail_handler_mailopening",
@@ -2180,7 +2192,7 @@
       "file_type": "code",
       "norm_label": "mailopening()",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L138"
+      "source_location": "L140"
     },
     {
       "id": "supabase_functions_content_notification_mail_handler_mailservice_actor",
@@ -2288,7 +2300,7 @@
       "file_type": "code",
       "norm_label": "notificationemail()",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L146"
+      "source_location": "L160"
     },
     {
       "id": "supabase_functions_content_notification_mail_handler_readinput",
@@ -2300,7 +2312,7 @@
       "file_type": "code",
       "norm_label": "readinput()",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L194"
+      "source_location": "L208"
     },
     {
       "id": "supabase_functions_content_notification_mail_handler_ready",
@@ -2312,7 +2324,7 @@
       "file_type": "code",
       "norm_label": "ready()",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L190"
+      "source_location": "L204"
     },
     {
       "id": "supabase_functions_content_notification_mail_handler_record",
@@ -2324,7 +2336,7 @@
       "file_type": "code",
       "norm_label": "record()",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L94"
+      "source_location": "L96"
     },
     {
       "id": "supabase_functions_content_notification_mail_handler_safesettings",
@@ -2336,7 +2348,7 @@
       "file_type": "code",
       "norm_label": "safesettings()",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L174"
+      "source_location": "L188"
     },
     {
       "id": "supabase_functions_content_notification_mail_handler_sendervalue",
@@ -2348,7 +2360,7 @@
       "file_type": "code",
       "norm_label": "sendervalue()",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L184"
+      "source_location": "L198"
     },
     {
       "id": "supabase_functions_content_notification_mail_handler_valuetext",
@@ -2360,7 +2372,7 @@
       "file_type": "code",
       "norm_label": "valuetext()",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L106"
+      "source_location": "L108"
     },
     {
       "id": "supabase_functions_content_notification_mail_index_actor",
@@ -6001,7 +6013,7 @@
       "file_type": "code",
       "norm_label": "errormessages",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L87"
+      "source_location": "L89"
     },
     {
       "id": "supabase_functions_content_notification_mail_handler_fieldlabels",
@@ -6012,7 +6024,7 @@
       "file_type": "code",
       "norm_label": "fieldlabels",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L57"
+      "source_location": "L59"
     },
     {
       "id": "supabase_functions_content_notification_mail_handler_sectionlabels",
@@ -6023,7 +6035,7 @@
       "file_type": "code",
       "norm_label": "sectionlabels",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L77"
+      "source_location": "L79"
     },
     {
       "id": "supabase_functions_content_notification_mail_handler_valuelabels",
@@ -6034,7 +6046,7 @@
       "file_type": "code",
       "norm_label": "valuelabels",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L84"
+      "source_location": "L86"
     },
     {
       "id": "supabase_functions_content_notification_mail_index",
@@ -10011,7 +10023,7 @@
       "node_kind": "heading",
       "norm_label": "validacao",
       "source_file": "docs/content-notifications.md",
-      "source_location": "L21"
+      "source_location": "L23"
     },
     {
       "id": "supabase_functions_content_notification_mail_deno",
@@ -16128,7 +16140,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L251",
+      "source_location": "L265",
       "weight": 1.0
     },
     {
@@ -16140,7 +16152,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L259",
+      "source_location": "L273",
       "weight": 1.0
     },
     {
@@ -16152,7 +16164,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L260",
+      "source_location": "L274",
       "weight": 1.0
     },
     {
@@ -16164,7 +16176,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L262",
+      "source_location": "L276",
       "weight": 1.0
     },
     {
@@ -16176,7 +16188,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L264",
+      "source_location": "L278",
       "weight": 1.0
     },
     {
@@ -16188,7 +16200,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L271",
+      "source_location": "L285",
       "weight": 1.0
     },
     {
@@ -16200,7 +16212,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L277",
+      "source_location": "L291",
       "weight": 1.0
     },
     {
@@ -16212,7 +16224,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L284",
+      "source_location": "L298",
       "weight": 1.0
     },
     {
@@ -16224,7 +16236,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L287",
+      "source_location": "L301",
       "weight": 1.0
     },
     {
@@ -16236,7 +16248,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L287",
+      "source_location": "L301",
       "weight": 1.0
     },
     {
@@ -16248,7 +16260,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L290",
+      "source_location": "L304",
       "weight": 1.0
     },
     {
@@ -16260,7 +16272,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L293",
+      "source_location": "L307",
       "weight": 1.0
     },
     {
@@ -16272,7 +16284,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L297",
+      "source_location": "L311",
       "weight": 1.0
     },
     {
@@ -16284,7 +16296,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L303",
+      "source_location": "L317",
+      "weight": 1.0
+    },
+    {
+      "source": "supabase_functions_content_notification_mail_handler_createhandler",
+      "target": "supabase_functions_content_notification_mail_handler_maildocument",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "supabase/functions/content-notification-mail/handler.ts",
+      "source_location": "L321",
       "weight": 1.0
     },
     {
@@ -16296,7 +16320,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L226",
+      "source_location": "L240",
       "weight": 1.0
     },
     {
@@ -16308,7 +16332,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L238",
+      "source_location": "L252",
+      "weight": 1.0
+    },
+    {
+      "source": "supabase_functions_content_notification_mail_handler_maildocument",
+      "target": "supabase_functions_content_notification_mail_handler_escapehtml",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "supabase/functions/content-notification-mail/handler.ts",
+      "source_location": "L151",
       "weight": 1.0
     },
     {
@@ -16320,7 +16356,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L142",
+      "source_location": "L144",
       "weight": 1.0
     },
     {
@@ -16332,7 +16368,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L147",
+      "source_location": "L161",
       "weight": 1.0
     },
     {
@@ -16344,7 +16380,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L149",
+      "source_location": "L163",
       "weight": 1.0
     },
     {
@@ -16356,7 +16392,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L150",
+      "source_location": "L164",
       "weight": 1.0
     },
     {
@@ -16368,7 +16404,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L157",
+      "source_location": "L171",
       "weight": 1.0
     },
     {
@@ -16380,7 +16416,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L159",
+      "source_location": "L173",
       "weight": 1.0
     },
     {
@@ -16392,7 +16428,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L160",
+      "source_location": "L174",
       "weight": 1.0
     },
     {
@@ -16404,7 +16440,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L169",
+      "source_location": "L183",
+      "weight": 1.0
+    },
+    {
+      "source": "supabase_functions_content_notification_mail_handler_notificationemail",
+      "target": "supabase_functions_content_notification_mail_handler_maildocument",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "supabase/functions/content-notification-mail/handler.ts",
+      "source_location": "L184",
       "weight": 1.0
     },
     {
@@ -16416,7 +16464,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L212",
+      "source_location": "L226",
       "weight": 1.0
     },
     {
@@ -16428,7 +16476,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L109",
+      "source_location": "L111",
       "weight": 1.0
     },
     {
@@ -16440,7 +16488,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L116",
+      "source_location": "L118",
       "weight": 1.0
     },
     {
@@ -16452,7 +16500,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L120",
+      "source_location": "L122",
       "weight": 1.0
     },
     {
@@ -16464,7 +16512,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L120",
+      "source_location": "L122",
       "weight": 1.0
     },
     {
@@ -17244,7 +17292,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L225",
+      "source_location": "L239",
       "weight": 1.0
     },
     {
@@ -28301,7 +28349,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/content-notifications.md",
-      "source_location": "L21",
+      "source_location": "L23",
       "weight": 1.0
     },
     {
@@ -33284,7 +33332,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L100",
+      "source_location": "L102",
       "weight": 1.0
     },
     {
@@ -33295,7 +33343,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L103",
+      "source_location": "L105",
       "weight": 1.0
     },
     {
@@ -33306,7 +33354,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L106",
+      "source_location": "L108",
       "weight": 1.0
     },
     {
@@ -33317,7 +33365,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L123",
+      "source_location": "L125",
       "weight": 1.0
     },
     {
@@ -33328,7 +33376,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L133",
+      "source_location": "L135",
       "weight": 1.0
     },
     {
@@ -33339,7 +33387,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L138",
+      "source_location": "L140",
+      "weight": 1.0
+    },
+    {
+      "source": "supabase_functions_content_notification_mail_handler",
+      "target": "supabase_functions_content_notification_mail_handler_maildocument",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "supabase/functions/content-notification-mail/handler.ts",
+      "source_location": "L148",
       "weight": 1.0
     },
     {
@@ -33350,7 +33409,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L146",
+      "source_location": "L160",
       "weight": 1.0
     },
     {
@@ -33372,7 +33431,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L174",
+      "source_location": "L188",
       "weight": 1.0
     },
     {
@@ -33383,29 +33442,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L184",
-      "weight": 1.0
-    },
-    {
-      "source": "supabase_functions_content_notification_mail_handler",
-      "target": "supabase_functions_content_notification_mail_handler_ready",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L190",
-      "weight": 1.0
-    },
-    {
-      "source": "supabase_functions_content_notification_mail_handler",
-      "target": "supabase_functions_content_notification_mail_handler_readinput",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L194",
+      "source_location": "L198",
       "weight": 1.0
     },
     {
@@ -33421,13 +33458,35 @@
     },
     {
       "source": "supabase_functions_content_notification_mail_handler",
+      "target": "supabase_functions_content_notification_mail_handler_ready",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "supabase/functions/content-notification-mail/handler.ts",
+      "source_location": "L204",
+      "weight": 1.0
+    },
+    {
+      "source": "supabase_functions_content_notification_mail_handler",
+      "target": "supabase_functions_content_notification_mail_handler_readinput",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "supabase/functions/content-notification-mail/handler.ts",
+      "source_location": "L208",
+      "weight": 1.0
+    },
+    {
+      "source": "supabase_functions_content_notification_mail_handler",
       "target": "supabase_functions_content_notification_mail_handler_createhandler",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L220",
+      "source_location": "L234",
       "weight": 1.0
     },
     {
@@ -33460,7 +33519,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L57",
+      "source_location": "L59",
       "weight": 1.0
     },
     {
@@ -33471,7 +33530,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L77",
+      "source_location": "L79",
       "weight": 1.0
     },
     {
@@ -33482,7 +33541,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L84",
+      "source_location": "L86",
       "weight": 1.0
     },
     {
@@ -33493,7 +33552,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L87",
+      "source_location": "L89",
       "weight": 1.0
     },
     {
@@ -33504,7 +33563,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L94",
+      "source_location": "L96",
       "weight": 1.0
     },
     {
@@ -33515,7 +33574,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "supabase/functions/content-notification-mail/handler.ts",
-      "source_location": "L97",
+      "source_location": "L99",
       "weight": 1.0
     },
     {
@@ -36224,5 +36283,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "8d83c4d67679c7636f65da25f48cae82d877a3f1"
+  "built_at_commit": "b485edf85383cfba630892421281f545fc9c401f"
 }
