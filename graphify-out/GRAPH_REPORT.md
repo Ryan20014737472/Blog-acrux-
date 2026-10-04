@@ -1,17 +1,17 @@
-# Graph Report - Blog-acrux-mail-opening  (2026-10-04)
+# Graph Report - Blog-acrux-mail-background  (2026-10-04)
 
 ## Corpus Check
-- 155 files · ~74,746 words
+- 155 files · ~74,954 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 5 file(s) not represented in the graph (top: (none) 2, .example 1, .css 1)
 
 ## Summary
-- 908 nodes · 2187 edges · 67 communities (43 shown, 24 thin omitted)
+- 909 nodes · 2191 edges · 67 communities (43 shown, 24 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 9 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8d83c4d6`
+- Built from commit: `b485edf8`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -148,7 +148,7 @@ Nodes (25): PostDraft, roleLabels, UserAccessForm(), userField, ManagedUser, use
 
 ### Community 11 - "content-notification-mail/handler.ts"
 Cohesion: 0.08
-Nodes (31): actionText(), bounded(), createHandler(), sendMail(), dateText(), Dependencies, errorMessages, escapeHtml() (+23 more)
+Nodes (32): actionText(), bounded(), createHandler(), sendMail(), dateText(), Dependencies, errorMessages, escapeHtml() (+24 more)
 
 ### Community 12 - "ACRUX ROBOCEP — site oficial"
 Cohesion: 0.25
