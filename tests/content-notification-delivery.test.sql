@@ -1,6 +1,7 @@
 -- Local-only regression for mail settings/scheduling with inert test doubles.
 -- Requires plain PostgreSQL + Vault/cron/net doubles (see docs), and both
--- notification migrations with CREATE EXTENSION lines skipped locally.
+-- notification migrations (including personalization) with CREATE EXTENSION
+-- lines skipped locally.
 -- The guard below refuses a real Supabase/net environment. No real key or HTTP.
 begin;
 do $$ begin
@@ -39,6 +40,9 @@ select pg_temp.assert(not has_function_privilege('authenticated','public.configu
 select pg_temp.assert(not has_function_privilege('authenticated','public.get_content_notification_mail_credentials()','EXECUTE'),'Authenticated can read provider key');
 select pg_temp.assert(not has_function_privilege('authenticated','private.content_notification_mail_credentials()','EXECUTE'),'Authenticated can bypass credentials wrapper');
 select pg_temp.assert(not has_function_privilege('authenticated','public.verify_content_notification_dispatch_token(text)','EXECUTE'),'Authenticated can inspect scheduler token');
+select pg_temp.assert(not has_function_privilege('anon','public.set_content_notification_mail_opening(text)','EXECUTE'),'Anonymous can personalize mail');
+select pg_temp.assert(not has_function_privilege('authenticated','public.set_content_notification_mail_opening(text)','EXECUTE'),'Authenticated can personalize mail directly');
+select pg_temp.assert(not has_function_privilege('authenticated','private.set_content_notification_mail_opening(text)','EXECUTE'),'Authenticated can bypass personalization wrapper');
 select pg_temp.assert(not has_function_privilege('service_role','private.dispatch_content_notification_emails()','EXECUTE'),'Service role can directly invoke cron dispatch');
 set local role authenticated;
 do $$ declare who text;denied boolean;begin
@@ -50,6 +54,8 @@ do $$ declare who text;denied boolean;begin
   perform pg_temp.assert(denied,'Owner/other admin accessed provider secret directly');
   denied:=false;begin perform public.verify_content_notification_dispatch_token('fake-token');exception when insufficient_privilege then denied:=true;end;
   perform pg_temp.assert(denied,'Owner/other admin accessed dispatch validation directly');
+  denied:=false;begin perform public.set_content_notification_mail_opening('Unauthorized');exception when insufficient_privilege then denied:=true;end;
+  perform pg_temp.assert(denied,'Owner/other admin bypassed Edge owner check to personalize mail');
  end loop;
 end $$;
 reset role;
@@ -58,6 +64,18 @@ set local role service_role;
 do $$ declare denied boolean;settings jsonb;credentials jsonb;begin
  settings:=public.get_content_notification_mail_settings();
  perform pg_temp.assert(not(settings ? 'api_key') and not(settings ? 'recipient_email'),'Settings leaked secret/recipient');
+ perform pg_temp.assert(settings->>'opening'='','Unexpected default opening');
+ settings:=public.set_content_notification_mail_opening(E'Olá, confira as novidades!\nDados abaixo.');
+ perform pg_temp.assert(settings->>'opening'=E'Olá, confira as novidades!\nDados abaixo.','Opening did not save without provider setup');
+ perform pg_temp.assert(not(settings->>'configured')::boolean and not(settings->>'enabled')::boolean,'Personalization configured/enabled mail');
+ denied:=false;begin perform public.set_content_notification_mail_opening(repeat('x',501));exception when invalid_parameter_value then denied:=true;end;
+ perform pg_temp.assert(denied,'Oversized opening accepted');
+ denied:=false;begin perform public.set_content_notification_mail_opening(null);exception when invalid_parameter_value then denied:=true;end;
+ perform pg_temp.assert(denied,'Null opening accepted');
+ denied:=false;begin perform public.set_content_notification_mail_opening('Bad'||chr(13)||'text');exception when invalid_parameter_value then denied:=true;end;
+ perform pg_temp.assert(denied,'Control character accepted in opening');
+ perform pg_temp.assert(public.get_content_notification_mail_settings()->>'opening'=E'Olá, confira as novidades!\nDados abaixo.','Invalid opening partially committed');
+ perform pg_temp.assert(public.get_content_notification_mail_credentials()->>'api_key' is null,'Personalization created provider credential');
  denied:=false;begin perform public.configure_content_notification_mail(null,'onboarding@resend.dev',true);exception when invalid_parameter_value then denied:=true;end;
  perform pg_temp.assert(denied,'Mail enabled without provider credential');
  denied:=false;begin perform public.configure_content_notification_mail('re_notification_test_only0001','invalid sender',true);exception when invalid_parameter_value then denied:=true;end;
@@ -69,8 +87,16 @@ do $$ declare denied boolean;settings jsonb;credentials jsonb;begin
  perform pg_temp.assert((settings->>'configured')::boolean and (settings->>'enabled')::boolean,'Valid config not enabled');
  perform pg_temp.assert(not(settings ? 'api_key'),'Saving exposed the key');
  credentials:=public.get_content_notification_mail_credentials();
+ perform pg_temp.assert(credentials->>'opening'=E'Olá, confira as novidades!\nDados abaixo.','Provider configuration lost saved opening');
  perform pg_temp.assert(credentials->>'recipient_email'='delivery-owner@example.invalid','Credentials selected wrong recipient');
  perform pg_temp.assert(credentials->>'api_key'='re_notification_test_only0001','Vault test credential unavailable to service worker');
+ settings:=public.set_content_notification_mail_opening(repeat('á',500));
+ perform pg_temp.assert(length(settings->>'opening')=500,'Opening limit rejected');
+ settings:=public.set_content_notification_mail_opening('');
+ perform pg_temp.assert(settings->>'opening'='','Empty opening cannot remove greeting');
+ perform pg_temp.assert((settings->>'configured')::boolean and (settings->>'enabled')::boolean and settings->>'sender'='onboarding@resend.dev','Personalization changed delivery settings');
+ credentials:=public.get_content_notification_mail_credentials();
+ perform pg_temp.assert(credentials->>'api_key'='re_notification_test_only0001' and credentials->>'recipient_email'='delivery-owner@example.invalid','Personalization changed key or recipient');
  perform pg_temp.assert(public.verify_content_notification_dispatch_token('wrong-token')=false,'Wrong dispatch token authorized');
 end $$;
 reset role;

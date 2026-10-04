@@ -1,17 +1,17 @@
-# Graph Report - Blog-acrux-notifications  (2026-10-04)
+# Graph Report - Blog-acrux-mail-opening  (2026-10-04)
 
 ## Corpus Check
-- 154 files · ~73,493 words
+- 155 files · ~74,746 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 5 file(s) not represented in the graph (top: (none) 2, .example 1, .css 1)
 
 ## Summary
-- 895 nodes · 2169 edges · 66 communities (43 shown, 23 thin omitted)
+- 908 nodes · 2187 edges · 67 communities (43 shown, 24 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 9 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `0e46d904`
+- Built from commit: `8d83c4d6`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -21,20 +21,20 @@
 - package.json
 - getSupabasePublicConfig
 - createSupabaseBrowserClient
-- robots-manager.tsx
+- RobotsManager
 - publicPageMetadata
-- projects-manager.tsx
+- ProjectsManager
 - admin-users/index.ts
 - compilerOptions
-- content-service.ts
+- users-manager.tsx
 - content-notification-mail/handler.ts
 - ACRUX ROBOCEP — site oficial
 - postcss.config.mjs
 - AGENTS.md
-- client.ts
+- getPublicImageUrl
 - competitions-manager.tsx
 - blog-index.tsx
-- ArrowLink
+- about-content-view.tsx
 - GalleryIndex
 - 20260904000000_initial_acrux_schema.sql
 - competitions-index.tsx
@@ -44,19 +44,19 @@
 - deno.json
 - functions/README.md
 - blog-manager.tsx
-- sponsors-manager.tsx
+- sponsors-preview.tsx
 - next
 - gallery-manager.tsx
-- SiteLogo
+- ArrowLink
 - layout.tsx
-- slugify
-- team-index.tsx
-- getPublicImageUrl
-- uploadPublicImage
+- admin-section.tsx
+- TeamIndex
+- sponsors-manager.tsx
+- arrow-link.tsx
 - team-manager.tsx
 - 20261003000738_repair_gallery_cover_on_image_delete.sql
 - 20261004031236_configure_content_notification_delivery.sql
-- users-manager.tsx
+- cn
 - 20260922020000_home_gallery_featured_limit.sql
 - public.team_members
 - 20260905000000_refine_editor_permissions.sql
@@ -64,13 +64,14 @@
 - 20260924234002_about_page.sql
 - 20260924010000_team_area_order.sql
 - save-post.test.sql
-- admin-section.tsx
-- UsersManager
+- [section]/page.tsx
+- 20261004035248_personalize_content_notification_opening.sql
 - pg_temp.assert
 - pg_temp.assert
 - Notificações privadas de conteúdo
 - content-notification-mail/deno.json
-- AdminWorkspace
+- projects-manager.tsx
+- Correções da auditoria de 2 de outubro de 2026
 
 ## God Nodes (most connected - your core abstractions)
 1. `createSupabaseBrowserClient()` - 122 edges
@@ -99,39 +100,39 @@
 ## Import Cycles
 - None detected.
 
-## Communities (66 total, 23 thin omitted)
+## Communities (67 total, 24 thin omitted)
 
 ### Community 0 - "public-metadata.ts"
-Cohesion: 0.24
-Nodes (9): Supabase, dynamic, robots(), dynamic, sitemap(), siteConfig, copyPostLink(), PublicPageMetadataOptions (+1 more)
+Cohesion: 0.22
+Nodes (10): dynamic, robots(), dynamic, sitemap(), adminNavigation, publicNavigation, siteConfig, copyPostLink() (+2 more)
 
 ### Community 1 - "react"
-Cohesion: 0.15
-Nodes (16): react, AdminPage(), metadata, AdminDashboard(), AdminDashboardContent(), signOut(), dashboardCards, AdminGate() (+8 more)
+Cohesion: 0.12
+Nodes (22): react, AdminPage(), metadata, AdminDashboard(), AdminDashboardContent(), signOut(), dashboardCards, AdminGate() (+14 more)
 
 ### Community 2 - "package.json"
 Cohesion: 0.05
 Nodes (39): compat, eslintConfig, dependencies, gsap, motion, next, react, react-dom (+31 more)
 
 ### Community 3 - "getSupabasePublicConfig"
-Cohesion: 0.18
-Nodes (12): @supabase/ssr, @supabase/supabase-js, ActivationState, AdminAccess, getAdminAccess(), requireAdminAccess(), createActivationClient(), createSupabaseAdminClient() (+4 more)
+Cohesion: 0.13
+Nodes (15): @supabase/ssr, @supabase/supabase-js, ActivateAccountPage(), metadata, ActivateAccountForm(), ActivationState, AdminAccess, getAdminAccess() (+7 more)
 
 ### Community 4 - "createSupabaseBrowserClient"
-Cohesion: 0.15
-Nodes (20): CompetitionRelations(), changeRelation(), loadRelations(), ProjectRelations(), changeRelation(), loadRelations(), Member, RobotMembers() (+12 more)
+Cohesion: 0.20
+Nodes (15): Member, RobotMembers(), load(), toggle(), getNumber(), TeamManager(), addArea(), askDeleteArea() (+7 more)
 
-### Community 5 - "robots-manager.tsx"
-Cohesion: 0.19
-Nodes (19): metadata, RobotsPage(), editableSpecifications(), emptyRobot(), isTextList(), RobotDraft, robotPayload(), RobotRow (+11 more)
+### Community 5 - "RobotsManager"
+Cohesion: 0.09
+Nodes (40): metadata, RobotsPage(), CompetitionForm(), CompetitionFormProps, CompetitionDraft, competitionError(), CompetitionRow, competitionToDraft() (+32 more)
 
 ### Community 6 - "publicPageMetadata"
 Cohesion: 0.09
-Nodes (23): BlogPostPage(), BlogPostPageProps, dynamicParams, generateMetadata(), CompetitionDetailPage(), CompetitionDetailPageProps, dynamicParams, generateMetadata() (+15 more)
+Nodes (22): BlogPostPage(), BlogPostPageProps, dynamicParams, generateMetadata(), CompetitionDetailPage(), CompetitionDetailPageProps, dynamicParams, generateMetadata() (+14 more)
 
-### Community 7 - "projects-manager.tsx"
-Cohesion: 0.25
-Nodes (16): SeasonOption, emptyProject(), projectCategories, ProjectDraft, projectPayload(), ProjectRow, projectToDraft(), ProjectForm() (+8 more)
+### Community 7 - "ProjectsManager"
+Cohesion: 0.16
+Nodes (19): metadata, ProjectsPage(), emptyProject(), projectCategories, ProjectDraft, projectPayload(), ProjectRow, projectToDraft() (+11 more)
 
 ### Community 8 - "admin-users/index.ts"
 Cohesion: 0.11
@@ -141,33 +142,33 @@ Nodes (10): Account, createHandler(), Profile, Role, roles, UserService, options
 Cohesion: 0.10
 Nodes (19): compilerOptions, allowJs, baseUrl, esModuleInterop, incremental, isolatedModules, jsx, lib (+11 more)
 
-### Community 10 - "content-service.ts"
-Cohesion: 0.18
-Nodes (8): PublicContentService, Competition, Post, Project, Robot, Season, Sponsor, TeamMember
+### Community 10 - "users-manager.tsx"
+Cohesion: 0.10
+Nodes (25): PostDraft, roleLabels, UserAccessForm(), userField, ManagedUser, usersRequest(), UsersResponse, UsersManager() (+17 more)
 
 ### Community 11 - "content-notification-mail/handler.ts"
-Cohesion: 0.09
-Nodes (30): actionText(), bounded(), createHandler(), sendMail(), dateText(), Dependencies, errorMessages, escapeHtml() (+22 more)
+Cohesion: 0.08
+Nodes (31): actionText(), bounded(), createHandler(), sendMail(), dateText(), Dependencies, errorMessages, escapeHtml() (+23 more)
 
 ### Community 12 - "ACRUX ROBOCEP — site oficial"
-Cohesion: 0.29
-Nodes (6): ACRUX ROBOCEP — site oficial, Configuração local, Conteúdo pendente, Estrutura principal, Logo, Stack
+Cohesion: 0.25
+Nodes (7): ACRUX ROBOCEP — site oficial, Configuração local, Conteúdo pendente, Estrutura principal, Logo, Stack, Supabase
 
-### Community 16 - "client.ts"
-Cohesion: 0.12
-Nodes (20): PlaceholderMedia(), PlaceholderMediaProps, Album, CompetitionRelationsProps, Member, Album, Member, ProjectRelationsProps (+12 more)
+### Community 16 - "getPublicImageUrl"
+Cohesion: 0.14
+Nodes (20): PlaceholderMedia(), PlaceholderMediaProps, GalleryImageRow, GalleryRow, Gallery, GalleryPreviewCards(), shapes, Post (+12 more)
 
 ### Community 17 - "competitions-manager.tsx"
-Cohesion: 0.23
-Nodes (18): CompetitionForm(), CompetitionFormProps, CompetitionDraft, competitionError(), CompetitionRow, competitionToDraft(), editableAwards(), emptyCompetitionDraft() (+10 more)
+Cohesion: 0.29
+Nodes (6): Album, CompetitionRelations(), changeRelation(), loadRelations(), CompetitionRelationsProps, Member
 
 ### Community 18 - "blog-index.tsx"
-Cohesion: 0.15
-Nodes (17): BlogPage(), metadata, BlogIndex(), closePost(), loadPosts(), openPost(), updatePostUrl(), CategoryRow (+9 more)
+Cohesion: 0.17
+Nodes (15): BlogPage(), metadata, BlogIndex(), closePost(), loadPosts(), openPost(), updatePostUrl(), CategoryRow (+7 more)
 
-### Community 19 - "ArrowLink"
-Cohesion: 0.06
-Nodes (48): Banco e publicação, Comportamento corrigido, Correções da auditoria de 2 de outubro de 2026, Verificação, gsap, motion, NotFound(), Home() (+40 more)
+### Community 19 - "about-content-view.tsx"
+Cohesion: 0.16
+Nodes (14): gsap, AboutPage(), metadata, AboutContentView(), AboutContent, aboutFromRow(), AboutMilestone, aboutPlaceholder (+6 more)
 
 ### Community 20 - "GalleryIndex"
 Cohesion: 0.25
@@ -186,8 +187,8 @@ Cohesion: 0.31
 Nodes (7): metadata, SeasonsPage(), addCounts(), Count, Counts, Season, SeasonsIndex()
 
 ### Community 24 - "notifications-manager.tsx"
-Cohesion: 0.11
-Nodes (36): useAdminDraftProtection(), MailReply, mailRequest(), MailSettings, NotificationEmailSettings(), save(), sendTest(), refreshContentNotificationStatus() (+28 more)
+Cohesion: 0.14
+Nodes (30): mailRequest(), NotificationEmailSettings(), save(), saveOpening(), sendTest(), refreshContentNotificationStatus(), ContentNotification, ContentNotificationPage (+22 more)
 
 ### Community 25 - "20261004031230_owner_content_notifications.sql"
 Cohesion: 0.09
@@ -198,48 +199,48 @@ Cohesion: 0.50
 Nodes (3): compilerOptions, strict, imports
 
 ### Community 30 - "blog-manager.tsx"
-Cohesion: 0.15
-Nodes (16): BlogManager(), createCategory(), deletePost(), savePost(), updateTitle(), CategoryRow, emptyDraft, ManagedPost (+8 more)
+Cohesion: 0.13
+Nodes (23): BlogManager(), createCategory(), deletePost(), savePost(), updateTitle(), uploadImages(), BlogManagerProps, CategoryRow (+15 more)
 
-### Community 31 - "sponsors-manager.tsx"
-Cohesion: 0.18
-Nodes (17): compareSponsors(), normalizedSponsorTier(), SponsorTier, sponsorTiers, blank, Draft, fromRow(), Sponsor (+9 more)
+### Community 31 - "sponsors-preview.tsx"
+Cohesion: 0.35
+Nodes (8): compareSponsors(), normalizedSponsorTier(), SponsorTier, sponsorTiers, Sponsor, SponsorsPreview(), sponsorCards(), tierStyles
 
 ### Community 32 - "next"
-Cohesion: 0.29
-Nodes (7): nextConfig, next, AdminLoginPage(), metadata, LoginErrorNotice(), LoginForm(), handleSubmit()
+Cohesion: 0.17
+Nodes (14): nextConfig, next, AdminLoginPage(), metadata, metadata, PasswordRecoveryPage(), LoginErrorNotice(), LoginForm() (+6 more)
 
 ### Community 33 - "gallery-manager.tsx"
-Cohesion: 0.20
-Nodes (10): AdminSession, AdminWorkspaceProps, BlogManagerProps, emptyDraft, GalleryDraft, GalleryImageRow, GalleryManagerProps, GalleryRow (+2 more)
+Cohesion: 0.15
+Nodes (18): useAdminConfirm(), emptyDraft, GalleryDraft, GalleryImageEditor(), deleteImage(), saveImage(), GalleryImageRow, GalleryManager() (+10 more)
 
-### Community 34 - "SiteLogo"
-Cohesion: 0.18
-Nodes (10): ActivateAccountPage(), metadata, metadata, PasswordRecoveryPage(), ActivateAccountForm(), getActivationUrl(), PasswordRecoveryForm(), handleSubmit() (+2 more)
+### Community 34 - "ArrowLink"
+Cohesion: 0.23
+Nodes (16): NotFound(), Home(), metadata, AdminSetupNotice(), ArrowLink(), AboutPreview(), HomePage(), AchievementsAndCompetitionPreview() (+8 more)
 
 ### Community 35 - "layout.tsx"
-Cohesion: 0.21
-Nodes (8): metadata, RootLayout(), RootLayoutProps, siteUrl, viewport, Footer(), Header(), publicNavigation
+Cohesion: 0.25
+Nodes (6): metadata, RootLayout(), RootLayoutProps, siteUrl, viewport, Footer()
 
-### Community 36 - "slugify"
-Cohesion: 0.13
-Nodes (24): useAdminConfirm(), selectDraft(), updateName(), GalleryImageEditor(), deleteImage(), GalleryManager(), deleteGallery(), imageDeleted() (+16 more)
+### Community 36 - "admin-section.tsx"
+Cohesion: 0.14
+Nodes (20): useAdminDraftProtection(), useAdminNavigationProtection(), AdminSection(), AdminSectionContent(), AdminSectionProps, copy, AdminWorkspace(), signOut() (+12 more)
 
-### Community 37 - "team-index.tsx"
-Cohesion: 0.23
-Nodes (9): metadata, TeamPage(), TeamAreaRow, TeamIndex(), loadMembers(), TeamMemberRow, groupTeamMembers(), TeamArea (+1 more)
+### Community 37 - "TeamIndex"
+Cohesion: 0.29
+Nodes (6): metadata, TeamPage(), TeamIndex(), groupTeamMembers(), TeamArea, TeamMember
 
-### Community 38 - "getPublicImageUrl"
-Cohesion: 0.39
-Nodes (6): metadata, ProjectsPage(), ProjectsIndex(), load(), load(), getPublicImageUrl()
+### Community 38 - "sponsors-manager.tsx"
+Cohesion: 0.18
+Nodes (13): selectDraft(), selectGallery(), blank, Draft, fromRow(), Sponsor, SponsorsManager(), remove() (+5 more)
 
-### Community 39 - "uploadPublicImage"
-Cohesion: 0.22
-Nodes (10): uploadImages(), saveImage(), uploadImage(), numericOrder(), chooseFile(), chooseFile(), uploadPhoto(), createStoragePath() (+2 more)
+### Community 39 - "arrow-link.tsx"
+Cohesion: 0.24
+Nodes (7): motion, PlaceholderPageProps, ArrowLinkProps, branches, HeroConstellation(), stars, Hero()
 
 ### Community 40 - "team-manager.tsx"
-Cohesion: 0.17
-Nodes (15): AdminConfirmationProvider(), AskConfirmation, ConfirmationContext, ConfirmationOptions, AdminDraftProtectionProvider(), AskConfirmation, DraftProtection, DraftProtectionContext (+7 more)
+Cohesion: 0.16
+Nodes (16): AdminConfirmationProvider(), AskConfirmation, ConfirmationContext, ConfirmationOptions, AdminDraftProtectionProvider(), AskConfirmation, DraftProtection, DraftProtectionContext (+8 more)
 
 ### Community 41 - "20261003000738_repair_gallery_cover_on_image_delete.sql"
 Cohesion: 0.47
@@ -249,17 +250,13 @@ Nodes (3): gallery_images_lock_album_before_delete, gallery_images_repair_cover_
 Cohesion: 0.17
 Nodes (4): private.configure_content_notification_mail(), private.content_notification_mail_credentials(), private.content_notification_mail_settings(), private.verify_content_notification_dispatch_token()
 
-### Community 43 - "users-manager.tsx"
-Cohesion: 0.33
-Nodes (8): roleLabels, UserAccessForm(), userField, ManagedUser, usersRequest(), UsersResponse, TeamArea, UserRole
+### Community 43 - "cn"
+Cohesion: 0.29
+Nodes (6): ScrollReveal(), ScrollRevealProps, Header(), PostImage(), PostImageProps, cn()
 
-### Community 55 - "admin-section.tsx"
-Cohesion: 0.21
-Nodes (9): AdminSectionPage(), AdminSectionPageProps, dynamicParams, metadata, sections, AdminSection(), AdminSectionContent(), AdminSectionProps (+1 more)
-
-### Community 59 - "UsersManager"
-Cohesion: 0.46
-Nodes (7): UsersManager(), askMutation(), invite(), mutate(), recoverUser(), removeUser(), saveUser()
+### Community 55 - "[section]/page.tsx"
+Cohesion: 0.29
+Nodes (5): AdminSectionPage(), AdminSectionPageProps, dynamicParams, metadata, sections
 
 ### Community 62 - "Notificações privadas de conteúdo"
 Cohesion: 0.50
@@ -269,29 +266,33 @@ Nodes (3): Implantação, Notificações privadas de conteúdo, Validação
 Cohesion: 0.50
 Nodes (3): compilerOptions, strict, imports
 
-### Community 64 - "AdminWorkspace"
-Cohesion: 0.67
-Nodes (3): useAdminNavigationProtection(), AdminWorkspace(), signOut()
+### Community 64 - "projects-manager.tsx"
+Cohesion: 0.29
+Nodes (6): Album, Member, ProjectRelations(), changeRelation(), loadRelations(), ProjectRelationsProps
+
+### Community 66 - "Correções da auditoria de 2 de outubro de 2026"
+Cohesion: 0.40
+Nodes (4): Banco e publicação, Comportamento corrigido, Correções da auditoria de 2 de outubro de 2026, Verificação
 
 ## Knowledge Gaps
 - **208 isolated node(s):** `compat`, `eslintConfig`, `nextConfig`, `name`, `version` (+203 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 313 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **23 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 319 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **24 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `createSupabaseBrowserClient()` connect `createSupabaseBrowserClient` to `react`, `getSupabasePublicConfig`, `robots-manager.tsx`, `projects-manager.tsx`, `client.ts`, `competitions-manager.tsx`, `blog-index.tsx`, `ArrowLink`, `GalleryIndex`, `competitions-index.tsx`, `seasons-index.tsx`, `notifications-manager.tsx`, `blog-manager.tsx`, `sponsors-manager.tsx`, `next`, `gallery-manager.tsx`, `SiteLogo`, `slugify`, `team-index.tsx`, `getPublicImageUrl`, `uploadPublicImage`, `team-manager.tsx`, `users-manager.tsx`, `AdminWorkspace`?**
-  _High betweenness centrality (0.150) - this node is a cross-community bridge._
-- **Why does `next` connect `next` to `public-metadata.ts`, `react`, `package.json`, `getSupabasePublicConfig`, `layout.tsx`, `SiteLogo`, `publicPageMetadata`, `projects-manager.tsx`, `robots-manager.tsx`, `getPublicImageUrl`, `client.ts`, `competitions-manager.tsx`, `blog-index.tsx`, `ArrowLink`, `admin-section.tsx`, `blog-manager.tsx`, `sponsors-manager.tsx`?**
-  _High betweenness centrality (0.111) - this node is a cross-community bridge._
-- **Why does `react` connect `react` to `package.json`, `getSupabasePublicConfig`, `createSupabaseBrowserClient`, `robots-manager.tsx`, `publicPageMetadata`, `projects-manager.tsx`, `client.ts`, `competitions-manager.tsx`, `blog-index.tsx`, `ArrowLink`, `competitions-index.tsx`, `seasons-index.tsx`, `notifications-manager.tsx`, `blog-manager.tsx`, `sponsors-manager.tsx`, `next`, `gallery-manager.tsx`, `SiteLogo`, `layout.tsx`, `slugify`, `team-index.tsx`, `getPublicImageUrl`, `team-manager.tsx`, `users-manager.tsx`, `admin-section.tsx`?**
-  _High betweenness centrality (0.103) - this node is a cross-community bridge._
+- **Why does `createSupabaseBrowserClient()` connect `createSupabaseBrowserClient` to `react`, `getSupabasePublicConfig`, `RobotsManager`, `ProjectsManager`, `users-manager.tsx`, `getPublicImageUrl`, `competitions-manager.tsx`, `blog-index.tsx`, `about-content-view.tsx`, `GalleryIndex`, `competitions-index.tsx`, `seasons-index.tsx`, `notifications-manager.tsx`, `blog-manager.tsx`, `sponsors-preview.tsx`, `next`, `gallery-manager.tsx`, `ArrowLink`, `admin-section.tsx`, `TeamIndex`, `sponsors-manager.tsx`, `team-manager.tsx`, `projects-manager.tsx`?**
+  _High betweenness centrality (0.147) - this node is a cross-community bridge._
+- **Why does `next` connect `next` to `public-metadata.ts`, `react`, `package.json`, `getSupabasePublicConfig`, `createSupabaseBrowserClient`, `RobotsManager`, `publicPageMetadata`, `ProjectsManager`, `getPublicImageUrl`, `competitions-manager.tsx`, `blog-index.tsx`, `about-content-view.tsx`, `blog-manager.tsx`, `sponsors-preview.tsx`, `layout.tsx`, `admin-section.tsx`, `sponsors-manager.tsx`, `arrow-link.tsx`, `cn`, `projects-manager.tsx`?**
+  _High betweenness centrality (0.108) - this node is a cross-community bridge._
+- **Why does `react` connect `react` to `package.json`, `getSupabasePublicConfig`, `createSupabaseBrowserClient`, `RobotsManager`, `ProjectsManager`, `users-manager.tsx`, `getPublicImageUrl`, `competitions-manager.tsx`, `blog-index.tsx`, `about-content-view.tsx`, `competitions-index.tsx`, `seasons-index.tsx`, `notifications-manager.tsx`, `blog-manager.tsx`, `sponsors-preview.tsx`, `next`, `gallery-manager.tsx`, `layout.tsx`, `admin-section.tsx`, `sponsors-manager.tsx`, `arrow-link.tsx`, `team-manager.tsx`, `cn`, `projects-manager.tsx`?**
+  _High betweenness centrality (0.100) - this node is a cross-community bridge._
 - **What connects `compat`, `eslintConfig`, `nextConfig` to the rest of the system?**
   _208 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `react` be split into smaller, more focused modules?**
+  _Cohesion score 0.125 - nodes in this community are weakly interconnected._
 - **Should `package.json` be split into smaller, more focused modules?**
   _Cohesion score 0.046511627906976744 - nodes in this community are weakly interconnected._
-- **Should `publicPageMetadata` be split into smaller, more focused modules?**
-  _Cohesion score 0.09269162210338681 - nodes in this community are weakly interconnected._
-- **Should `admin-users/index.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.11384615384615385 - nodes in this community are weakly interconnected._
+- **Should `getSupabasePublicConfig` be split into smaller, more focused modules?**
+  _Cohesion score 0.13230769230769232 - nodes in this community are weakly interconnected._

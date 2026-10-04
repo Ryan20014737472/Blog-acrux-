@@ -3,6 +3,7 @@ export interface MailSettings {
   enabled: boolean;
   configured: boolean;
   sender: string | null;
+  opening: string;
   pending_count: number;
   last_error: string | null;
 }
@@ -11,6 +12,7 @@ export interface MailCredentials {
   sender: string | null;
   recipient_email: string | null;
   enabled: boolean;
+  opening: string;
 }
 export interface MailNotification {
   id: number;
@@ -36,6 +38,7 @@ export interface MailService {
   verifyDispatchToken(token: string): Promise<boolean>;
   settings(): Promise<MailSettings>;
   configure(apiKey: string | null, sender: string, enabled: boolean): Promise<MailSettings>;
+  personalize(opening: string): Promise<MailSettings>;
   credentials(): Promise<MailCredentials>;
   claim(limit: number): Promise<MailNotification[]>;
   finish(id: number, claimToken: string, providerId: string | null, error: MailError | null): Promise<boolean>;
@@ -132,7 +135,16 @@ function dateText(value: string) {
   return Number.isNaN(date.getTime()) ? "Data indisponível" : `${new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }).format(date)} (Brasília)`;
 }
 
-export function notificationEmail(notification: MailNotification) {
+function mailOpening(value: string = "") {
+  const opening = value.slice(0, 500);
+  return {
+    text: opening.trim() ? `${opening}\n\n` : "",
+    html: opening.trim() ? `<p style="white-space:pre-wrap;overflow-wrap:anywhere">${escapeHtml(opening)}</p>` : "",
+  };
+}
+
+export function notificationEmail(notification: MailNotification, opening: string = "") {
+  const greeting = mailOpening(opening);
   const section = sectionLabels[notification.entity_table] ?? "Conteúdo do site";
   const action = actionText(notification);
   const label = bounded(notification.entity_label || "Item sem título", 160);
@@ -154,8 +166,8 @@ export function notificationEmail(notification: MailNotification) {
   const subject = `[ACRUX] ${action}: ${label}`.replace(/[\r\n]/g, " ").slice(0, 200);
   return {
     subject,
-    text: `${description}\nQuando: ${dateText(notification.occurred_at)}\n\n${details}${extra}\n\nVer notificações: ${panelUrl}\n\nEsta mensagem é exclusiva do proprietário do site.`,
-    html: `<!doctype html><html lang="pt-BR"><body style="font-family:Arial,sans-serif;color:#18212b;line-height:1.6;max-width:640px;margin:24px auto;padding:0 16px"><h1 style="font-size:22px">Alteração no site ACRUX</h1><p>${escapeHtml(description)}</p><p>Quando: ${escapeHtml(dateText(notification.occurred_at))}</p>${changes.length ? changes.map((item) => `<p style="white-space:pre-wrap;overflow-wrap:anywhere">${item.html}</p>`).join("") : `<p>${escapeHtml(details)}</p>`}${extra ? `<p>${escapeHtml(extra.trim())}</p>` : ""}<p><a href="${panelUrl}">Ver notificações no painel</a></p><p style="font-size:12px;color:#536171">Esta mensagem é exclusiva do proprietário do site.</p></body></html>`,
+    text: `${greeting.text}${description}\nQuando: ${dateText(notification.occurred_at)}\n\n${details}${extra}\n\nVer notificações: ${panelUrl}\n\nEsta mensagem é exclusiva do proprietário do site.`,
+    html: `<!doctype html><html lang="pt-BR"><body style="font-family:Arial,sans-serif;color:#18212b;line-height:1.6;max-width:640px;margin:24px auto;padding:0 16px">${greeting.html}<h1 style="font-size:22px">Alteração no site ACRUX</h1><p>${escapeHtml(description)}</p><p>Quando: ${escapeHtml(dateText(notification.occurred_at))}</p>${changes.length ? changes.map((item) => `<p style="white-space:pre-wrap;overflow-wrap:anywhere">${item.html}</p>`).join("") : `<p>${escapeHtml(details)}</p>`}${extra ? `<p>${escapeHtml(extra.trim())}</p>` : ""}<p><a href="${panelUrl}">Ver notificações no painel</a></p><p style="font-size:12px;color:#536171">Esta mensagem é exclusiva do proprietário do site.</p></body></html>`,
   };
 }
 
@@ -164,6 +176,7 @@ function safeSettings(settings: MailSettings) {
     enabled: settings.enabled === true,
     configured: settings.configured === true,
     sender: typeof settings.sender === "string" ? settings.sender : null,
+    opening: typeof settings.opening === "string" ? settings.opening.slice(0, 500) : "",
     pending_count: Number.isSafeInteger(settings.pending_count) && settings.pending_count >= 0 ? settings.pending_count : 0,
     last_error: typeof settings.last_error === "string" && Object.hasOwn(errorMessages, settings.last_error) ? settings.last_error : null,
   };
@@ -261,7 +274,7 @@ export function createHandler(serviceFor: (token: string | null) => MailService,
           }
           if (now() - startedAt >= 45_000) break; // remaining claims expire and retry in the durable outbox
           const key = /^[\w:-]{1,256}$/.test(notification.idempotency_key) ? notification.idempotency_key : `acrux-content-notification-${notification.id}`;
-          const result = await sendMail(credentials, notificationEmail(notification), key);
+          const result = await sendMail(credentials, notificationEmail(notification, credentials.opening), key);
           if (!await service.finish(notification.id, notification.claim_token, result.providerId, result.error)) return errorReply(503, "delivery_failed");
           if (result.error) failed++; else sent++;
         }
@@ -272,6 +285,10 @@ export function createHandler(serviceFor: (token: string | null) => MailService,
       if (!actor) return reply(401, { error: "Sessão inválida. Entre novamente." });
       if (actor.is_owner !== true) return reply(403, { error: "Somente o proprietário pode configurar as notificações." });
       if (input.action === "status") return reply(200, { settings: safeSettings(await service.settings()) });
+      if (input.action === "personalize") {
+        if (typeof input.opening !== "string" || input.opening.length > 500 || /[\u0000-\u0008\u000b-\u001f\u007f]/.test(input.opening)) return reply(400, { error: "Use até 500 caracteres de texto na abertura do e-mail." });
+        return reply(200, { settings: safeSettings(await service.personalize(input.opening)), message: "Abertura do e-mail salva." });
+      }
       if (input.action === "configure") {
         const sender = senderValue(input.sender);
         const key = input.api_key === null || input.api_key === undefined ? null : typeof input.api_key === "string" ? input.api_key.trim() : "";
@@ -283,10 +300,11 @@ export function createHandler(serviceFor: (token: string | null) => MailService,
       if (input.action === "test") {
         const credentials = await service.credentials();
         if (!ready(credentials)) return errorReply(409, "configuration_missing");
+        const greeting = mailOpening(credentials.opening);
         const result = await sendMail(credentials, {
           subject: "Teste de notificações ACRUX",
-          text: `As notificações de alterações no site ACRUX serão enviadas somente para você.\n\nVer notificações: ${panelUrl}\n\nEste é um teste solicitado no painel; nenhum conteúdo do site foi alterado.`,
-          html: `<!doctype html><html lang="pt-BR"><body style="font-family:Arial,sans-serif;line-height:1.6"><h1 style="font-size:22px">Teste de notificações ACRUX</h1><p>As notificações de alterações no site ACRUX serão enviadas somente para você.</p><p><a href="${panelUrl}">Ver notificações no painel</a></p><p>Este é um teste solicitado no painel; nenhum conteúdo do site foi alterado.</p></body></html>`,
+          text: `${greeting.text}As notificações de alterações no site ACRUX serão enviadas somente para você.\n\nVer notificações: ${panelUrl}\n\nEste é um teste solicitado no painel; nenhum conteúdo do site foi alterado.`,
+          html: `<!doctype html><html lang="pt-BR"><body style="font-family:Arial,sans-serif;line-height:1.6">${greeting.html}<h1 style="font-size:22px">Teste de notificações ACRUX</h1><p>As notificações de alterações no site ACRUX serão enviadas somente para você.</p><p><a href="${panelUrl}">Ver notificações no painel</a></p><p>Este é um teste solicitado no painel; nenhum conteúdo do site foi alterado.</p></body></html>`,
         }, `acrux-content-notification-test-${uuid()}`);
         if (result.error) return errorReply(503, result.error);
         return reply(200, { message: "E-mail de teste aceito pelo serviço somente para o proprietário. Confira sua caixa de entrada e spam." });

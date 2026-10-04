@@ -4,7 +4,7 @@ import { createHandler, notificationEmail } from "../supabase/functions/content-
 
 const ownerEmail = "owner@example.test";
 const apiKey = "re_privateExampleKey123456";
-const settings = { enabled: true, configured: true, sender: "onboarding@resend.dev", pending_count: 1, last_error: null };
+const settings = { enabled: true, configured: true, sender: "onboarding@resend.dev", opening: "Olá, confira as novidades do site.", pending_count: 1, last_error: null };
 const notification = {
   id: 15, occurred_at: "2026-10-03T12:00:00Z", entity_table: "posts", entity_id: "post-id", entity_label: "Robô <ACRUX>", action: "update",
   actor_id: "editor-id", actor_name: "Ana & Bia", actor_role: "editor", actor_kind: "user", changed_fields: ["title", "status", "categories"],
@@ -20,7 +20,8 @@ function setup(overrides = {}, options = {}) {
     verifyDispatchToken: async (token) => { calls.push(["verify", token]); return token === "scheduler-token"; },
     settings: async () => { calls.push(["settings"]); return settings; },
     configure: async (...args) => { calls.push(["configure", ...args]); return settings; },
-    credentials: async () => { calls.push(["credentials"]); return { api_key: apiKey, sender: settings.sender, recipient_email: ownerEmail, enabled: true }; },
+    personalize: async (opening) => { calls.push(["personalize", opening]); return { ...settings, opening }; },
+    credentials: async () => { calls.push(["credentials"]); return { api_key: apiKey, sender: settings.sender, recipient_email: ownerEmail, enabled: true, opening: settings.opening }; },
     claim: async (limit) => { calls.push(["claim", limit]); return [notification]; },
     finish: async (...args) => { calls.push(["finish", ...args]); return true; },
     ...overrides,
@@ -38,7 +39,7 @@ test("owner actions require a validated session and pinned ownership even for an
   const anonymous = setup();
   assert.equal((await anonymous.send({ action: "status" }, {})).status, 401);
   assert.deepEqual(anonymous.calls, []);
-  for (const action of ["status", "configure", "test"]) {
+  for (const action of ["status", "configure", "personalize", "test"]) {
     const denied = setup({ actor: async () => ({ id: "other-admin", is_owner: false }) });
     assert.equal((await denied.send({ action, api_key: apiKey, sender: settings.sender, enabled: true })).status, 403);
     assert.deepEqual(denied.calls, []);
@@ -59,7 +60,7 @@ test("only a valid scheduler token dispatches; owner JWT and caller-supplied rec
 
 test("a scheduler token cannot read settings, configure credentials or request test mail", async () => {
   const { send, calls } = setup();
-  for (const action of ["status", "configure", "test"]) assert.equal((await send({ action }, { "x-acrux-notification-token": "scheduler-token" })).status, 401);
+  for (const action of ["status", "configure", "personalize", "test"]) assert.equal((await send({ action }, { "x-acrux-notification-token": "scheduler-token" })).status, 401);
   assert.deepEqual(calls, []);
 });
 
@@ -100,6 +101,45 @@ test("enabling without an existing provider key is rejected before attempting co
   assert.equal(calls.some(([action]) => action === "configure"), false);
 });
 
+test("personalization works without provider setup and changes only the opening", async () => {
+  const unconfigured = { ...settings, enabled: false, configured: false };
+  const opening = "Olá, aconteceram algumas coisas enquanto você esteve fora.\nConfira os dados:";
+  const { send, calls, messages } = setup({ personalize: async (value) => {
+    calls.push(["personalize", value]);
+    return { ...unconfigured, opening: value, api_key: apiKey };
+  } });
+  const response = await send({ action: "personalize", opening, enabled: true, sender: "attacker@example.test", api_key: apiKey, to: "attacker@example.test" });
+  assert.equal(response.status, 200);
+  assert.deepEqual((await response.json()).settings, { ...unconfigured, opening });
+  assert.deepEqual(calls, [["actor", "owner-token"], ["personalize", opening]]);
+  assert.deepEqual(messages, []);
+});
+
+test("personalization accepts empty text and the limit, rejects invalid text before storage", async () => {
+  const { send, calls, messages } = setup();
+  for (const opening of [undefined, null, 12, {}, "x".repeat(501), "bad\u0000text", "bad\rtext", "bad\u007ftext"]) {
+    assert.equal((await send({ action: "personalize", opening })).status, 400);
+  }
+  assert.equal(calls.some(([action]) => action === "personalize"), false);
+  for (const opening of ["", "á".repeat(500), "Olá!\nNovidades:\tconfira"]) {
+    const response = await send({ action: "personalize", opening });
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).settings.opening, opening);
+  }
+  assert.deepEqual(messages, []);
+});
+
+test("personalization failures remain safe and never send or configure delivery", async () => {
+  const { send, calls, messages } = setup({ personalize: async () => { throw new Error(`${apiKey} ${ownerEmail}`); } });
+  const response = await send({ action: "personalize", opening: "Olá!" });
+  assert.equal(response.status, 503);
+  const body = await response.text();
+  assert.equal(body.includes(apiKey), false);
+  assert.equal(body.includes(ownerEmail), false);
+  assert.deepEqual(calls, [["actor", "owner-token"]]);
+  assert.deepEqual(messages, []);
+});
+
 test("test email has the pinned recipient, fixed URL and unique test idempotency key; it creates no event", async () => {
   const { send, calls, messages } = setup();
   const response = await send({ action: "test", to: ["attacker@example.test"], recipient_email: "attacker@example.test", from: "attacker@example.test", url: "https://evil.test" });
@@ -109,6 +149,8 @@ test("test email has the pinned recipient, fixed URL and unique test idempotency
   assert.deepEqual(messages[0].body.to, [ownerEmail]);
   assert.equal(messages[0].body.from, `ACRUX <${settings.sender}>`);
   assert.equal(messages[0].body.subject, "Teste de notificações ACRUX");
+  assert.ok(messages[0].body.text.startsWith(`${settings.opening}\n\n`));
+  assert.ok(messages[0].body.html.indexOf(settings.opening) < messages[0].body.html.indexOf("<h1"));
   assert.match(messages[0].body.text, /nenhum conteúdo do site foi alterado/);
   assert.match(messages[0].body.html, /https:\/\/ryan20014737472.github.io\/Blog-acrux-\/admin\/notificacoes\//);
   assert.equal(messages[0].request.headers["Idempotency-Key"], "acrux-content-notification-test-test-uuid");
@@ -145,6 +187,7 @@ test("dispatch claims a bounded batch, sends a detailed escaped change and commi
   assert.deepEqual(calls.find(([action]) => action === "claim"), ["claim", 5]);
   assert.deepEqual(calls.find(([action]) => action === "finish"), ["finish", 15, "claim-a", "resend-message-id", null]);
   const email = messages[0];
+  assert.ok(email.body.text.startsWith(`${settings.opening}\n\n`));
   assert.deepEqual(email.body.to, [ownerEmail]);
   assert.match(email.body.text, /Ana & Bia \(Editor\): publicou/);
   assert.match(email.body.text, /Título\nAntes: Título antigo\nDepois: Título novo/);
@@ -275,4 +318,18 @@ test("gallery image edits explain alt text, ordering and path even when the capt
     after_values: { images: [{ caption: "Mesma legenda", alt_text: "Foto atualizada", storage_path: "album/atualizada.png", display_order: 2 }] } });
   assert.match(mail.text, /Antes: Legenda: Mesma legenda\nDescrição da imagem: Foto antiga\nArquivo: album\/antiga.png\nOrdem de exibição: 1/);
   assert.match(mail.text, /Depois: Legenda: Mesma legenda\nDescrição da imagem: Foto atualizada\nArquivo: album\/atualizada.png\nOrdem de exibição: 2/);
+});
+
+test("the opening is plain text before all change data in both email formats", () => {
+  const opening = 'Olá <Batistel> & equipe!\n<script>alert("x")</script>';
+  const original = notificationEmail(notification);
+  const personalized = notificationEmail(notification, opening);
+  assert.equal(personalized.text, `${opening}\n\n${original.text}`);
+  assert.equal(personalized.subject, original.subject);
+  assert.ok(personalized.html.includes('Olá &lt;Batistel&gt; &amp; equipe!\n&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;'));
+  assert.equal(personalized.html.includes("<script>"), false);
+  assert.ok(personalized.html.indexOf("Olá &lt;Batistel&gt;") < personalized.html.indexOf("<h1"));
+  assert.match(personalized.html, /Antes: Título antigo/);
+  assert.match(personalized.html, /Depois: Título novo/);
+  assert.deepEqual(notificationEmail(notification, " \n\t"), original);
 });

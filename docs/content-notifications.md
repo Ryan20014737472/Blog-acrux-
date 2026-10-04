@@ -6,13 +6,15 @@ O destinatário é uma única conta de Auth definida por um operador autorizado 
 
 ## Implantação
 
-1. Aplicar as migrações `owner_content_notifications` e `configure_content_notification_delivery` antes de publicar o painel.
+1. Aplicar as migrações `owner_content_notifications`, `configure_content_notification_delivery` e `personalize_content_notification_opening` antes de publicar o painel.
 2. Identificar a conta do proprietário pelo e-mail informado, conferir que corresponde a exatamente um usuário de Auth com acesso ao painel e gravar seu UUID em `private.content_notification_config`. Não inserir e-mail, UUID pessoal ou credenciais no código público. O destinatário não é configurável pelo navegador.
 3. Implantar a Edge Function `content-notification-mail` com `verify_jwt = false`. O handler verifica explicitamente a sessão em Auth e o proprietário no banco para as ações do painel. O agendamento exige um token privado gerado e armazenado no Vault, validado por RPC exclusivo da service-role.
 4. No painel do proprietário, abrir Notificações → Avisos por e-mail, informar uma chave de envio do Resend e um remetente autorizado. A chave é transmitida somente ao servidor e armazenada criptografada no Vault. Não é retornada à interface nem persistida no navegador.
 5. Usar “Enviar e-mail de teste para mim”. O destinatário é resolvido no servidor a partir da conta configurada; não existe parâmetro `to` aceito do cliente.
 
 O remetente `onboarding@resend.dev` funciona somente para o endereço cadastrado na conta do Resend. Para outro destinatário, o serviço exige um remetente de domínio verificado. Pausar e-mails mantém o histórico no painel e preserva os avisos aguardando envio.
+
+Em Notificações → Avisos por e-mail, o proprietário pode editar a **Abertura do e-mail**, conferir a prévia e usar **Salvar abertura**. São até 500 caracteres de texto, com quebras de linha. Deixar vazio remove a saudação. A abertura antecede os dados em cada aviso e também no teste; não altera o assunto nem os detalhes da mudança. HTML digitado aparece como texto. É possível salvar a abertura mesmo sem configurar o Resend; essa ação não ativa o envio, não substitui a chave e não muda o destinatário. A configuração de entrega e a abertura são salvas separadamente, com proteção de rascunhos ao sair.
 
 O cron `acrux-private-content-notifications` verifica a fila a cada minuto e chama a função somente quando há avisos prontos e envio habilitado/configurado. A fila possui leases, identificadores estáveis de idempotência e novas tentativas com intervalo crescente. Falhas de envio não bloqueiam salvamentos. O estado “enviado” indica aceitação pelo serviço de e-mail, não confirmação de leitura ou chegada à caixa de entrada.
 
