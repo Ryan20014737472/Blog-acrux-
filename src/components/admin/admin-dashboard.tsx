@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { AdminGate, type AdminSession } from "@/components/admin/admin-gate";
 import { AdminNavigation } from "@/components/admin/admin-navigation";
+import { useContentNotificationStatus } from "@/components/admin/use-content-notification-status";
 import { SiteLogo } from "@/components/layout/site-logo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -28,6 +29,7 @@ export function AdminDashboard() {
 function AdminDashboardContent({ session }: { session: AdminSession }) {
   const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const { status: notificationStatus } = useContentNotificationStatus(session.userId);
 
   async function signOut() {
     const supabase = createSupabaseBrowserClient();
@@ -49,7 +51,7 @@ function AdminDashboardContent({ session }: { session: AdminSession }) {
               <p className="mt-1 text-xs uppercase tracking-[0.12em] text-acrux-muted">{session.role}</p>
             </div>
           </div>
-          <AdminNavigation busy={isSigningOut} onSignOut={signOut} role={session.role} variant="sidebar" />
+          <AdminNavigation busy={isSigningOut} onSignOut={signOut} role={session.role} variant="sidebar" canViewNotifications={notificationStatus?.is_owner === true} notificationCount={notificationStatus?.unread_count} />
         </aside>
 
         <div className="min-w-0">
@@ -65,6 +67,7 @@ function AdminDashboardContent({ session }: { session: AdminSession }) {
             ))}
           </div>
           {session.role === "admin" ? <Link className="glass-panel card-hover mt-4 block rounded-2xl p-5" href="/admin/usuarios"><p className="text-sm font-bold text-white">Usuários</p><p className="mt-2 text-sm leading-6 text-acrux-muted">Contas autorizadas e permissões administrativas.</p></Link> : null}
+          {notificationStatus?.is_owner ? <Link className="glass-panel card-hover mt-4 block min-w-0 rounded-2xl p-5" href="/admin/notificacoes"><p className="text-sm font-bold text-white">Suas notificações{notificationStatus.unread_count > 0 ? ` · ${notificationStatus.unread_count} não lidas` : ""}</p><p className="mt-2 text-sm leading-6 text-acrux-muted">Veja quem alterou cada conteúdo e o que mudou. Histórico exclusivo da sua conta.</p></Link> : null}
         </div>
       </div>
     </main>

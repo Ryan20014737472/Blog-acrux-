@@ -7,6 +7,7 @@ import { useState } from "react";
 import type { AdminSession } from "@/components/admin/admin-gate";
 import { AdminNavigation } from "@/components/admin/admin-navigation";
 import { useAdminNavigationProtection } from "@/components/admin/admin-draft-protection";
+import { useContentNotificationStatus } from "@/components/admin/use-content-notification-status";
 import { SiteLogo } from "@/components/layout/site-logo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -22,6 +23,7 @@ export function AdminWorkspace({ children, description, section, session, title 
   const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const { busy, notice, requestNavigation } = useAdminNavigationProtection();
+  const { status: notificationStatus } = useContentNotificationStatus(session.userId);
 
   async function signOut() {
     if (isSigningOut || busy || !await requestNavigation()) return;
@@ -50,7 +52,7 @@ export function AdminWorkspace({ children, description, section, session, title 
               <p className="text-xs uppercase tracking-[0.12em] text-acrux-muted">{session.role}</p>
             </div>
           </div>
-          <AdminNavigation busy={isSigningOut || busy} signingOut={isSigningOut} onSignOut={signOut} role={session.role} section={section} />
+          <AdminNavigation busy={isSigningOut || busy} signingOut={isSigningOut} onSignOut={signOut} role={session.role} section={section} canViewNotifications={notificationStatus?.is_owner === true} notificationCount={notificationStatus?.unread_count} />
           {notice ? <p className="mt-3 text-sm leading-6 text-acrux-cyan-bright" role="status">{notice}</p> : null}
         </header>
 

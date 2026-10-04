@@ -12,16 +12,20 @@ interface AdminNavigationProps {
   signingOut?: boolean;
   onSignOut: () => void;
   role: AdminRole;
+  notificationCount?: number;
+  canViewNotifications?: boolean;
   section?: string;
   variant?: "horizontal" | "sidebar";
 }
 
-export function AdminNavigation({ busy, signingOut = busy, onSignOut, role, section, variant = "horizontal" }: AdminNavigationProps) {
+export function AdminNavigation({ busy, signingOut = busy, onSignOut, role, notificationCount = 0, canViewNotifications = false, section, variant = "horizontal" }: AdminNavigationProps) {
   const [isOpen, setIsOpen] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
   const currentHref = section ? `/admin/${section}` : "/admin";
-  const navigation = role === "admin" ? adminNavigation : adminNavigation.filter((item) => item.label !== "Usuários" && item.label !== "Sobre");
+  const navigation = adminNavigation.filter((item) =>
+    (role === "admin" || (item.label !== "Usuários" && item.label !== "Sobre")) &&
+    (item.label !== "Notificações" || canViewNotifications));
   const currentLabel = navigation.find((item) => item.href === currentHref)?.label ?? "Painel";
 
   return (
@@ -73,7 +77,8 @@ export function AdminNavigation({ busy, signingOut = busy, onSignOut, role, sect
               key={item.href}
               onClick={() => setIsOpen(false)}
             >
-              {item.label}
+              <span>{item.label}</span>
+              {item.label === "Notificações" && notificationCount > 0 ? <span className="ml-2 inline-flex min-h-6 min-w-6 items-center justify-center rounded-full bg-acrux-cyan-bright px-1.5 text-xs font-bold text-acrux-navy" aria-label={`${notificationCount} não lidas`}>{notificationCount > 99 ? "99+" : notificationCount}</span> : null}
             </Link>
           );
         })}
