@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  mergeNotifications, notificationAction, notificationActor, notificationField, notificationSection,
-  notificationValue, parseNotificationPage, parseNotificationStatus,
+  mergeNotifications, notificationAction, notificationActor, notificationChangeDescription, notificationField, notificationSection,
+  notificationSummary, notificationValue, parseNotificationPage, parseNotificationStatus,
 } from "../src/features/admin/notification-model.ts";
 
 function notification(overrides = {}) {
@@ -85,4 +85,61 @@ test("new pages merge in chronological ID order without repeating refreshed item
   const merged = mergeNotifications([first, notification()], [updated, notification({ id: 4 })]);
   assert.deepEqual(merged.map((item) => item.id), [10, 8, 4]);
   assert.equal(merged[1].read_at, updated.read_at);
+});
+
+test("summaries distinguish creation, updates and deletion without repeating fields or counting technical IDs", () => {
+  const item = notification({ changed_fields: ["id", "title", "title", "categories"] });
+  assert.match(notificationSummary(item), /^Foram alterados 2 campos: Título e Categorias\./);
+  assert.match(notificationSummary({ ...item, action: "create" }), /^Novo registro cadastrado com 2 campos/);
+  assert.match(notificationSummary({ ...item, action: "delete" }), /histórico preservou 2 campos do estado anterior/);
+  assert.match(notificationSummary(notification({ changed_fields: [] })), /não contém campos adicionais para comparar/);
+});
+
+test("replacing images with the same total still reports actual additions and removals", () => {
+  const item = notification({ changed_fields: ["image_paths"], before_values: { image_paths: ["a.jpg", "b.jpg"] }, after_values: { image_paths: ["b.jpg", "c.jpg", "d.jpg"] } });
+  assert.equal(notificationChangeDescription(item, "image_paths"), "Imagens: 2 imagens adicionadas; 1 imagem removida.");
+  const replaced = { ...item, after_values: { image_paths: ["b.jpg", "c.jpg"] } };
+  assert.equal(notificationChangeDescription(replaced, "image_paths"), "Imagens: 1 imagem adicionada; 1 imagem removida.");
+});
+
+test("image reordering and edits to the same image are described without inventing additions", () => {
+  const reordered = notification({ before_values: { image_paths: ["a.jpg", "b.jpg"] }, after_values: { image_paths: ["b.jpg", "a.jpg"] } });
+  assert.equal(notificationChangeDescription(reordered, "image_paths"), "Imagens: ordem das imagens alterada.");
+  const image = { id: "image-1", caption: "Evento", alt_text: "Robô parado", display_order: 0, storage_path: "before.jpg" };
+  const updated = notification({ before_values: { images: [image] }, after_values: { images: [{ ...image, alt_text: "Robô em movimento", display_order: 1, storage_path: "after.jpg" }] } });
+  assert.match(notificationChangeDescription(updated, "images"), /1 imagem atualizada; dados das imagens alterados: Descrição da imagem, Ordem de exibição e Arquivo/);
+  assert.doesNotMatch(notificationChangeDescription(updated, "images"), /adicionada|removida/);
+});
+
+test("category and team changes identify names stored in the snapshot", () => {
+  const item = notification({ before_values: { categories: [{ id: "a", name: "Notícias" }], team_members: [{ id: "a", name: "Ana" }] }, after_values: { categories: [{ id: "b", name: "Eventos" }], team_members: [{ id: "b", name: "Bruno" }] } });
+  assert.equal(notificationChangeDescription(item, "categories"), "Categorias: 1 categoria adicionada (“Eventos”); 1 categoria removida (“Notícias”).");
+  assert.equal(notificationChangeDescription(item, "team_members"), "Integrantes: 1 integrante vinculado (“Bruno”); 1 integrante desvinculado (“Ana”).");
+  const renamed = { ...item, after_values: { categories: [{ id: "a", name: "Eventos" }] } };
+  assert.match(notificationChangeDescription(renamed, "categories"), /1 categoria atualizada \(“Eventos”\)/);
+});
+
+test("text revisions and permission changes explain the change in readable Portuguese", () => {
+  const item = notification({ before_values: { body: "Antes", role: "editor" }, after_values: { body: "Depois da revisão", role: "admin" } });
+  assert.match(notificationChangeDescription(item, "body"), /texto revisado, de 5 para 17 caracteres/);
+  assert.equal(notificationChangeDescription(item, "role"), "Permissão: de “Editor” para “Administrador”.");
+});
+
+test("excerpted records and ambiguous collection identities do not invent precise differences", () => {
+  const item = notification({ before_values: { body: "Primeiro trecho… [trecho]", images: { excerpt: "[]", truncated: true } }, after_values: { body: "Segundo trecho… [trecho]", images: [] } });
+  for (const field of ["body", "images"]) {
+    const description = notificationChangeDescription(item, field);
+    assert.match(description, /apenas um trecho/);
+    assert.doesNotMatch(description, /caracteres|imagens removidas|imagens adicionadas/);
+  }
+  const duplicate = notification({ before_values: { image_paths: ["a.jpg", "a.jpg"] }, after_values: { image_paths: ["a.jpg", "b.jpg"] } });
+  assert.match(notificationChangeDescription(duplicate, "image_paths"), /lista atualizada, de 2 para 2 imagens/);
+  assert.doesNotMatch(notificationChangeDescription(duplicate, "image_paths"), /removida|adicionada/);
+});
+
+test("initial and deleted values are explicit and date-only fields keep their calendar date", () => {
+  const item = notification({ before_values: { title: "Título antigo" }, after_values: { title: "Título novo" } });
+  assert.equal(notificationChangeDescription({ ...item, action: "create" }, "title"), "Título: valor inicial — Título novo.");
+  assert.equal(notificationChangeDescription({ ...item, action: "delete" }, "title"), "Título: último valor registrado — Título antigo.");
+  assert.equal(notificationValue("2026-10-03", "achieved_on"), "03/10/2026");
 });

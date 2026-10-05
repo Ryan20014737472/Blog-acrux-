@@ -8,8 +8,8 @@ import { NotificationEmailSettings } from "@/components/admin/notification-email
 import { refreshContentNotificationStatus, useContentNotificationStatus } from "@/components/admin/use-content-notification-status";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
-  mergeNotifications, notificationAction, notificationActor, notificationDate, notificationField, notificationRole,
-  notificationSection, notificationValue, parseNotificationPage, type ContentNotification, type ContentNotificationStatus,
+  mergeNotifications, notificationAction, notificationActor, notificationChangeDescription, notificationDate, notificationField, notificationRole,
+  notificationSection, notificationSummary, notificationValue, parseNotificationPage, type ContentNotification, type ContentNotificationStatus,
 } from "@/features/admin/notification-model";
 
 export function NotificationsManager({ session }: { session: AdminSession }) {
@@ -176,6 +176,8 @@ function NotificationInbox({ session, status, refreshStatus }: { session: AdminS
 
 function NotificationCard({ item, emailConfigured, disabled, marking, onRead }: { item: ContentNotification; emailConfigured: boolean; disabled: boolean; marking: boolean; onRead: () => void }) {
   const role = notificationRole(item.actor_role);
+  const fields = [...new Set(item.changed_fields)];
+  const highlights = fields.filter((field) => field !== "id").slice(0, 6);
   const emailLabel = item.email_status === "sent" ? "E-mail enviado" : item.email_status === "failed" ? "Falha no envio do e-mail" :
     item.email_status === "disabled" ? "Envio por e-mail pausado" : !emailConfigured ? "E-mail aguarda configuração" : "E-mail na fila de envio";
 
@@ -186,20 +188,26 @@ function NotificationCard({ item, emailConfigured, disabled, marking, onRead }: 
       <time className="text-acrux-muted sm:ml-auto" dateTime={item.occurred_at}>{notificationDate(item.occurred_at)}</time>
     </div>
     <h3 className="mt-4 text-lg font-bold leading-7 text-white [overflow-wrap:anywhere]">{notificationAction(item)}: {item.entity_label || "Registro sem título"}</h3>
-    <p className="mt-2 text-base leading-7 text-acrux-muted [overflow-wrap:anywhere]"><span className="font-semibold text-white">{notificationActor(item)}</span>{role ? ` · ${role}` : ""}</p>
+    <p className="mt-2 text-base leading-7 text-acrux-muted [overflow-wrap:anywhere]">Responsável: <span className="font-semibold text-white">{notificationActor(item)}</span>{role ? ` · ${role}` : ""}</p>
+    <p className="mt-3 text-base leading-7 text-acrux-muted [overflow-wrap:anywhere]">{notificationSummary(item)}</p>
+    {highlights.length ? <ul className="mt-3 grid min-w-0 gap-2 text-sm leading-6 text-acrux-muted" aria-label="Resumo do que mudou">
+      {highlights.map((field) => <li className="min-w-0 [overflow-wrap:anywhere]" key={field}>{notificationChangeDescription(item, field)}</li>)}
+    </ul> : null}
+    {fields.filter((field) => field !== "id").length > highlights.length ? <p className="mt-2 text-sm leading-6 text-acrux-muted">Os demais campos estão disponíveis em Ver alterações.</p> : null}
     <p className="mt-2 text-sm leading-6 text-acrux-muted">{emailLabel}</p>
 
     <details className="mt-4 min-w-0 rounded-xl border border-white/10 bg-white/3">
-      <summary className="min-h-11 cursor-pointer rounded-xl px-3 py-3 text-base font-bold text-acrux-cyan-bright focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acrux-cyan-bright">Ver alterações ({item.changed_fields.length})</summary>
+      <summary className="min-h-11 cursor-pointer rounded-xl px-3 py-3 text-base font-bold text-acrux-cyan-bright focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acrux-cyan-bright">Ver alterações ({fields.length})</summary>
       <div className="grid min-w-0 gap-4 p-3 pt-1 sm:p-4 sm:pt-1">
-        {item.changed_fields.map((field) => <section className="min-w-0 border-t border-white/10 pt-3" key={field}>
+        {fields.map((field) => <section className="min-w-0 border-t border-white/10 pt-3" key={field}>
           <h4 className="text-base font-bold text-white [overflow-wrap:anywhere]">{notificationField(field)}</h4>
+          <p className="mt-2 text-sm leading-6 text-acrux-muted [overflow-wrap:anywhere]">{notificationChangeDescription(item, field)}</p>
           <dl className="mt-3 grid min-w-0 gap-3 md:grid-cols-2">
             <div className="min-w-0 rounded-xl bg-black/15 p-3"><dt className="text-xs font-bold uppercase tracking-wider text-acrux-muted">Antes</dt><dd className="mt-2 whitespace-pre-wrap text-base leading-7 text-acrux-muted [overflow-wrap:anywhere]">{item.action === "create" ? "O registro ainda não existia" : notificationValue(item.before_values[field], field)}</dd></div>
             <div className="min-w-0 rounded-xl bg-cyan-300/5 p-3"><dt className="text-xs font-bold uppercase tracking-wider text-acrux-cyan-bright">Depois</dt><dd className="mt-2 whitespace-pre-wrap text-base leading-7 text-white [overflow-wrap:anywhere]">{item.action === "delete" ? "O registro foi excluído" : notificationValue(item.after_values[field], field)}</dd></div>
           </dl>
         </section>)}
-        {item.changed_fields.length === 0 ? <p className="text-base leading-7 text-acrux-muted">Alteração no registro, sem campos adicionais para exibir.</p> : null}
+        {fields.length === 0 ? <p className="text-base leading-7 text-acrux-muted">Alteração no registro, sem campos adicionais para exibir.</p> : null}
         <p className="text-xs leading-5 text-acrux-muted [overflow-wrap:anywhere]">Registro: {item.entity_id}. Textos longos podem aparecer como trechos.</p>
       </div>
     </details>

@@ -1,3 +1,5 @@
+import { describeNotificationChange, notificationOverview } from "../../../supabase/functions/_shared/notification-descriptions.ts";
+
 export type NotificationValue = string | number | boolean | null | NotificationValue[] | { [key: string]: NotificationValue };
 
 export interface ContentNotification {
@@ -106,6 +108,7 @@ export function notificationValue(value: NotificationValue | undefined, field: s
   if (typeof value === "string") {
     if (field === "status" || field === "role") return valueLabels[value] ?? value;
     if (["starts_at", "ends_at", "published_at"].includes(field)) return notificationDate(value);
+    if (field === "achieved_on" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value.split("-").reverse().join("/");
     return value;
   }
   if (typeof value === "number") return String(value);
@@ -115,6 +118,17 @@ export function notificationValue(value: NotificationValue | undefined, field: s
   }
   if (value.truncated === true && typeof value.excerpt === "string") return `${value.excerpt}\n… [trecho]`;
   return Object.entries(value).map(([key, item]) => `${notificationField(key)}: ${notificationValue(item, key)}`).join("\n") || "Nenhum item";
+}
+
+export function notificationSummary(notification: ContentNotification) {
+  return notificationOverview(notification, notificationField);
+}
+
+export function notificationChangeDescription(notification: ContentNotification, field: string) {
+  return describeNotificationChange(notification, field, {
+    fieldLabel: notificationField,
+    valueText: (value, name) => notificationValue(value as NotificationValue | undefined, name),
+  });
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
