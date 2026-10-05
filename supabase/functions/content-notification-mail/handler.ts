@@ -1,3 +1,5 @@
+import { describeNotificationChange, notificationOverview } from "../_shared/notification-descriptions.ts";
+
 export type MailError = "provider_unavailable" | "provider_rejected" | "configuration_missing" | "delivery_failed";
 export interface MailSettings {
   enabled: boolean;
@@ -57,6 +59,7 @@ const mailGold = "#fbf406"; // The accent of the star in the ACRUX logo.
 const requestLimit = 4096;
 const batchSize = 5;
 const fieldLabels: Record<string, string> = {
+  id: "Identificador do registro",
   title: "Título", name: "Nome", slug: "Identificador do link", headline: "Título de apresentação", introduction: "Introdução",
   institutional_note: "Nota institucional", mission: "Missão", vision: "Visão", values_text: "Valores", robocep: "ROBOCEP",
   partners_title: "Título das parcerias", partners_body: "Texto das parcerias", home_headline: "Título da página inicial",
@@ -108,7 +111,11 @@ function fieldLabel(field: string) {
 function valueText(value: unknown, field: string, depth = 0): string {
   if (value === null || value === undefined || value === "") return "Não informado";
   if (typeof value === "boolean") return field === "is_published" ? value ? "Publicado" : "Não publicado" : value ? "Sim" : "Não";
-  if (typeof value === "string") return bounded((field === "status" || field === "role") ? valueLabels[value] ?? value : value);
+  if (typeof value === "string") {
+    if (["starts_at", "ends_at", "published_at"].includes(field)) return dateText(value);
+    if (field === "achieved_on" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value.split("-").reverse().join("/");
+    return bounded((field === "status" || field === "role") ? valueLabels[value] ?? value : value);
+  }
   if (typeof value === "number") return String(value);
   if (depth >= 4) return "Consulte os detalhes no painel";
   if (Array.isArray(value)) {
@@ -119,7 +126,10 @@ function valueText(value: unknown, field: string, depth = 0): string {
     if (value.length > 20) items.push(`Mais ${value.length - 20} itens no painel`);
     return bounded(items.join("\n"));
   }
-  if (record(value)) return bounded(Object.entries(value).slice(0, 20).map(([key, item]) => `${fieldLabel(key)}: ${valueText(item, key, depth + 1)}`).join("\n")) || "Nenhum item";
+  if (record(value)) {
+    if (value.truncated === true && typeof value.excerpt === "string") return bounded(`${value.excerpt}\n… [trecho registrado; consulte os detalhes no painel]`);
+    return bounded(Object.entries(value).slice(0, 20).map(([key, item]) => `${fieldLabel(key)}: ${valueText(item, key, depth + 1)}`).join("\n")) || "Nenhum item";
+  }
   return "Consulte os detalhes no painel";
 }
 function actionText(notification: MailNotification) {
@@ -166,7 +176,10 @@ export function notificationEmail(notification: MailNotification, opening: strin
   const role = notification.actor_role ? valueLabels[notification.actor_role] ?? notification.actor_role : null;
   const attribution = `${actor}${role ? ` (${bounded(role, 50)})` : ""}`;
   const description = `${attribution}: ${action.toLowerCase()} “${label}” em ${section}.`;
-  const fields = [...new Set(notification.changed_fields)].slice(0, 50);
+  const allFields = [...new Set(notification.changed_fields)];
+  const fields = allFields.slice(0, 50);
+  const overview = notificationOverview(notification, fieldLabel);
+  const highlights = allFields.filter((field) => field !== "id").slice(0, 10).map((field) => describeNotificationChange(notification, field, { fieldLabel, valueText }));
   const changes = fields.map((field) => {
     const before = valueText(notification.before_values[field], field);
     const after = valueText(notification.after_values[field], field);
@@ -176,12 +189,13 @@ export function notificationEmail(notification: MailNotification, opening: strin
     return { name, text: `${name}\nAntes: ${before}\nDepois: ${after}`, html: `<strong style="color:${mailGold};">${escapeHtml(name)}</strong><br>Antes: ${escapeHtml(before)}<br>Depois: ${escapeHtml(after)}` };
   });
   const details = changes.length ? changes.map((item) => item.text).join("\n\n") : "Consulte os detalhes da alteração no painel.";
-  const extra = notification.changed_fields.length > 50 ? "\nHá mais campos alterados; consulte todos no painel." : "";
+  const extra = allFields.length > 50 ? "\nHá mais campos alterados; consulte todos no painel." : "";
+  const summary = highlights.length ? `\n\nO que mudou:\n${highlights.map((item) => `• ${item}`).join("\n")}${allFields.filter((field) => field !== "id").length > highlights.length ? "\n• Os demais campos aparecem nos detalhes abaixo." : ""}` : "";
   const subject = `[ACRUX] ${action}: ${label}`.replace(/[\r\n]/g, " ").slice(0, 200);
   return {
     subject,
-    text: `${greeting.text}${description}\nQuando: ${dateText(notification.occurred_at)}\n\n${details}${extra}\n\nVer notificações: ${panelUrl}\n\nEsta mensagem é exclusiva do proprietário do site.`,
-    html: mailDocument("Alteração no site ACRUX", `${greeting.html}<h1 style="font-size:22px;line-height:1.3;color:${mailGold};">Alteração no site ACRUX</h1><p><span style="color:${mailGold};font-weight:700;">${escapeHtml(attribution)}</span>: ${escapeHtml(action.toLowerCase())} “${escapeHtml(label)}” em ${escapeHtml(section)}.</p><p style="color:${mailGold};">Quando: ${escapeHtml(dateText(notification.occurred_at))}</p>${changes.length ? changes.map((item) => `<p style="white-space:pre-wrap;overflow-wrap:anywhere">${item.html}</p>`).join("") : `<p>${escapeHtml(details)}</p>`}${extra ? `<p>${escapeHtml(extra.trim())}</p>` : ""}`),
+    text: `${greeting.text}${description}\nQuando: ${dateText(notification.occurred_at)}\n\n${overview}${summary}\n\nDetalhes registrados:\n\n${details}${extra}\n\nVer notificações: ${panelUrl}\n\nEsta mensagem é exclusiva do proprietário do site.`,
+    html: mailDocument("Alteração no site ACRUX", `${greeting.html}<h1 style="font-size:22px;line-height:1.3;color:${mailGold};">Alteração no site ACRUX</h1><p><span style="color:${mailGold};font-weight:700;">${escapeHtml(attribution)}</span>: ${escapeHtml(action.toLowerCase())} “${escapeHtml(label)}” em ${escapeHtml(section)}.</p><p style="color:${mailGold};">Quando: ${escapeHtml(dateText(notification.occurred_at))}</p><p style="overflow-wrap:anywhere;">${escapeHtml(overview)}</p>${highlights.length ? `<h2 style="font-size:18px;color:${mailGold};">O que mudou</h2><ul style="margin:12px 0;padding-left:20px;">${highlights.map((item) => `<li style="margin-bottom:8px;overflow-wrap:anywhere;">${escapeHtml(item)}</li>`).join("")}</ul>${allFields.filter((field) => field !== "id").length > highlights.length ? "<p>Os demais campos aparecem nos detalhes abaixo.</p>" : ""}` : ""}<h2 style="font-size:18px;color:${mailGold};">Detalhes registrados</h2>${changes.length ? changes.map((item) => `<p style="white-space:pre-wrap;overflow-wrap:anywhere">${item.html}</p>`).join("") : `<p>${escapeHtml(details)}</p>`}${extra ? `<p>${escapeHtml(extra.trim())}</p>` : ""}`),
   };
 }
 
@@ -317,8 +331,8 @@ export function createHandler(serviceFor: (token: string | null) => MailService,
         const greeting = mailOpening(credentials.opening);
         const result = await sendMail(credentials, {
           subject: "Teste de notificações ACRUX",
-          text: `${greeting.text}As notificações de alterações no site ACRUX serão enviadas somente para você.\n\nVer notificações: ${panelUrl}\n\nEste é um teste solicitado no painel; nenhum conteúdo do site foi alterado.`,
-          html: mailDocument("Teste de notificações ACRUX", `${greeting.html}<h1 style="font-size:22px;line-height:1.3;color:${mailGold};">Teste de notificações ACRUX</h1><p>As notificações de alterações no site ACRUX serão enviadas somente para você.</p><p>Este é um teste solicitado no painel; nenhum conteúdo do site foi alterado.</p>`),
+          text: `${greeting.text}As notificações de alterações no site ACRUX serão enviadas somente para você.\n\nCada aviso identifica a seção e o conteúdo afetado, o usuário responsável e o horário da alteração. O resumo explica quais campos mudaram, incluindo imagens adicionadas ou removidas, categorias e integrantes vinculados. Os detalhes mostram os valores anteriores e atuais; na criação ou exclusão, mostram os dados registrados naquela ação. Os horários deste e-mail seguem o fuso de Brasília.\n\nVer notificações: ${panelUrl}\n\nEste é um teste solicitado no painel; nenhum conteúdo do site foi alterado.`,
+          html: mailDocument("Teste de notificações ACRUX", `${greeting.html}<h1 style="font-size:22px;line-height:1.3;color:${mailGold};">Teste de notificações ACRUX</h1><p>As notificações de alterações no site ACRUX serão enviadas somente para você.</p><p>Cada aviso identifica a seção e o conteúdo afetado, o usuário responsável e o horário da alteração.</p><h2 style="font-size:18px;color:${mailGold};">O que você verá nos avisos</h2><p>O resumo explica quais campos mudaram, incluindo imagens adicionadas ou removidas, categorias e integrantes vinculados. Os detalhes mostram os valores anteriores e atuais; na criação ou exclusão, mostram os dados registrados naquela ação. Os horários deste e-mail seguem o fuso de Brasília.</p><p>Este é um teste solicitado no painel; nenhum conteúdo do site foi alterado.</p>`),
         }, `acrux-content-notification-test-${uuid()}`);
         if (result.error) return errorReply(503, result.error);
         return reply(200, { message: "E-mail de teste aceito pelo serviço somente para o proprietário. Confira sua caixa de entrada e spam." });

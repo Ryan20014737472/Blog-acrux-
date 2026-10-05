@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHandler, notificationEmail } from "../supabase/functions/content-notification-mail/handler.ts";
+import { notificationChangeDescription, notificationSummary } from "../src/features/admin/notification-model.ts";
 
 const ownerEmail = "owner@example.test";
 const apiKey = "re_privateExampleKey123456";
@@ -332,4 +333,38 @@ test("the opening is plain text before all change data in both email formats", (
   assert.match(personalized.html, /Antes: Título antigo/);
   assert.match(personalized.html, /Depois: Título novo/);
   assert.deepEqual(notificationEmail(notification, " \n\t"), original);
+});
+
+test("panel and email share precise summaries for images, categories and account permissions", () => {
+  const event = { ...notification, changed_fields: ["image_paths", "categories", "role"],
+    before_values: { image_paths: ["old.jpg"], categories: [{ id: "a", name: "Notícias" }], role: "editor" },
+    after_values: { image_paths: ["new.jpg", "another.jpg"], categories: [{ id: "b", name: "Eventos" }], role: "admin" } };
+  const mail = notificationEmail(event);
+  assert.ok(mail.text.includes(notificationSummary(event)));
+  for (const field of event.changed_fields) {
+    assert.ok(mail.text.includes(notificationChangeDescription(event, field)));
+    assert.ok(mail.html.includes(notificationChangeDescription(event, field)));
+  }
+  assert.match(mail.text, /2 imagens adicionadas; 1 imagem removida/);
+  assert.match(mail.text, /Permissão: de “Editor” para “Administrador”/);
+  assert.match(mail.text, /Detalhes registrados:\n\nImagens\nAntes: old.jpg/);
+});
+
+test("new descriptive summaries escape untrusted names and explain snapshot truncation", () => {
+  const event = { ...notification, changed_fields: ["categories", "body"], before_values: { categories: [], body: "Antes… [trecho]" },
+    after_values: { categories: [{ id: "a", name: '<img src=x onerror="alert(1)">' }], body: "Depois… [trecho]" } };
+  const mail = notificationEmail(event);
+  assert.equal(mail.html.includes("<img"), false);
+  assert.ok(mail.html.includes("&lt;img"));
+  assert.match(mail.text, /O histórico contém apenas um trecho/);
+  assert.doesNotMatch(mail.text, /para \d+ caracteres/);
+});
+
+test("recorded dates use readable Brazilian formatting and explicit timezone for instants", () => {
+  const mail = notificationEmail({ ...notification, changed_fields: ["starts_at", "achieved_on"],
+    before_values: { starts_at: "2026-10-03T12:00:00Z", achieved_on: "2026-10-03" },
+    after_values: { starts_at: "2026-10-03T13:00:00Z", achieved_on: "2026-10-04" } });
+  assert.match(mail.text, /03\/10\/2026, 09:00 \(Brasília\)/);
+  assert.match(mail.text, /03\/10\/2026, 10:00 \(Brasília\)/);
+  assert.match(mail.text, /Data da conquista\nAntes: 03\/10\/2026\nDepois: 04\/10\/2026/);
 });
