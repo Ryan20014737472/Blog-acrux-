@@ -20,7 +20,7 @@ jobs:
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://gxzpaocmgllycssxlena.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_zMMjB9MiMr0DscCJV5j6DQ_pQr25O8l
-      NEXT_PUBLIC_SITE_URL: https://ryan20014737472.github.io/Blog-acrux-
+      NEXT_PUBLIC_SITE_URL: https://ghostnomzer.github.io/Blog-acrux-
 
     steps:
       - name: Checkout

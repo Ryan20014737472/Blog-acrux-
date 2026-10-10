@@ -47,6 +47,12 @@ pnpm typecheck
 pnpm build
 ```
 
+## Publicação no GitHub Pages e página 404
+
+O site está disponível em https://ghostnomzer.github.io/Blog-acrux-/. O workflow de publicação configura `NEXT_PUBLIC_SITE_URL` com esse endereço e o build usa o caminho base `/Blog-acrux-`.
+
+Endereços inexistentes exibem a página personalizada de `src/app/not-found.tsx`, com a logo original, fundo azul e detalhes dourados. As ações **Voltar ao início** e **Ir para o blog** respeitam o caminho base e funcionam também sem JavaScript. O Next.js exporta `out/404.html`, servido pelo GitHub Pages com status HTTP 404, sem redirecionamento automático. A página inclui título próprio, indicação de não indexação e layout adaptado a telas pequenas.
+
 ## Supabase
 
 Variáveis necessárias:

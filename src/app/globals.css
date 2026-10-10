@@ -267,6 +267,20 @@ textarea:focus-visible {
   transform: none;
 }
 
+.not-found-page {
+  --not-found-gold: #e6c56e;
+  background: radial-gradient(ellipse at 50% 42%, rgb(9 59 120 / 35%), transparent 70%);
+}
+
+.not-found-home {
+  background: linear-gradient(135deg, #f4dda2, var(--not-found-gold));
+  box-shadow: 0 0.75rem 2rem rgb(230 197 110 / 12%);
+}
+
+.not-found-home:hover:not(:disabled) {
+  box-shadow: 0 1rem 2.3rem rgb(230 197 110 / 20%);
+}
+
 .admin-input {
   width: 100%;
   min-width: 0;
